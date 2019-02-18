@@ -439,10 +439,13 @@ p.lasttortext {
 	background: #d83541;
 	text-decoration: none;
 	outline: none;
-	padding: 5px 10px;
+	padding: 5px 15px;
 	color: #fff;
 	font-size: 10pt;
 	z-index: 53;
+	position: absolute;
+	bottom: 10px;
+	left: calc(50% - (82.5px / 2));
 }
 .last_tor_button:hover {
 	color: #fff;
@@ -467,12 +470,11 @@ p.lasttortext {
 
 .side-series {
 	font-size: 13pt;
-	margin-bottom: 50px;
+	margin-bottom: 30px;
 }
 
 .side-description {
 	font-size: 12pt;
-	margin-bottom: 10px;
 }
 
 .profile-info-left-side {
