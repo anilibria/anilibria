@@ -1,2 +1,4 @@
 SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO)
 SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO)
+
+SQLSTATE[HY000] [1049] Unknown database 'anilibria'
