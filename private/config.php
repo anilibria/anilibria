@@ -1,4 +1,5 @@
 <?php
+require($_SERVER['DOCUMENT_ROOT'].'/vendor/autoload.php');
 $conf['start'] = microtime(true);
 
 $conf['memcache']	= ['/tmp/memcached.socket', 0];
