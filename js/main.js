@@ -528,7 +528,7 @@ $("#smallSearchInput").focusout(function(){
 	setTimeout(function(){$('#smallSearch').hide();},250);
 });
 
-$("#smallSearchInput").keyup(function(){	
+$("#smallSearchInput").on("change keyup paste mouseup",function(){
 	if($('input[id=smallSearchInput]').val().length > 2){
 		$.post("//"+document.domain+"/public/search.php", {'search': $('input[id=smallSearchInput]').val(), 'small': '1'}, function(json){
 			if(json){
