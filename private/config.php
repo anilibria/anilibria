@@ -38,3 +38,6 @@ $conf['youtube_secret'] = 'secret';
 
 $conf['push_all'] = 'secret';
 $conf['push_sanasol'] = 'secret';
+
+$conf['mysql_host'] = 'mariadb';
+$conf['sphinx_host'] = 'sphinx';
