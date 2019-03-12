@@ -19,8 +19,9 @@ function randomClassName(){
 	$left = 0;
 	$img = '/img/29.png';
 	
-	$data[] = ['img' => 'ragnarok', 'left' => '0', 'url' => '/ro'];
+	$data[] = ['img' => 'ragnarok', 'left' => '0px', 'url' => '/ro'];
 	$data[] = ['img' => 'bs', 'left' => '-195px', 'url' => '/bs'];
+	$data[] = ['img' => 'storm', 'left' => '0px', 'url' => '/storm'];
 	
 	$css = getTemplate('header');
 	$arr = ['header', 'main', 'content', 'side', 'footer', 'clear', 'link', 'headercontent'];
@@ -32,19 +33,26 @@ function randomClassName(){
 		$result["$val"] = $name;
 	}
 	if(checkADS()){
+		/*
 		$cday = date('j', $var['time']);
 		$key = $cache->get('adsCurrent');
 		$day = $cache->get('adsCurrentDay');
+		
 		if($key === false || $day === false || $day != $cday){
-			//$key = random_int(0, count($data)-1);
-			if($cday % 2 === 0){
-				$key = '0';
+			if($key === false){
+				$key = 0;
 			}else{
-				$key = '1';
-			}			
+				$key++;
+			}
+			if($key > count($data)-1){
+				$key = 0;
+			}
+			//$key = random_int(0, count($data)-1);
 			$cache->set('adsCurrent', $key, 172800);
 			$cache->set('adsCurrentDay', $cday, 172800);
 		}
+		*/
+		$key = 2;
 		$ads = $data["$key"];
 		$test = $cache->get('adsCurrentID'.$key);
 		if($test === false){
@@ -108,7 +116,7 @@ $xcss = randomClassName();
 						<li><a id="activelink0" href="/">ГЛАВНАЯ</a></li>
 						<li><a id="activelink1" href="/pages/catalog.php">РЕЛИЗЫ</a></li>
 						<li><a id="activelink2" href="/pages/schedule.php">РАСПИСАНИЕ</a></li>
-						<li><a id="activelink3" href="/public/random.php">СЛУЧАЙНОЕ</a></li>
+						<li><a data-random-release id="activelink3" href="/public/random.php">СЛУЧАЙНОЕ</a></li>
 						<li><a id="activelink4" href="/pages/app.php">ПРИЛОЖЕНИЕ</a></li>
 						<li><a id="activelink5" href="/pages/team.php">КОМАНДА</a></li>
 						<li><a id="activelink6" href="/pages/donate.php">ПОДДЕРЖАТЬ ПРОЕКТ</a></li>

@@ -169,7 +169,7 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
 	<div style="margin-top:10px;"></div>
 </div>
 
-<div id="vk_comments" style="margin-top: 15px;"></div>
+<div id="vk_comments" style="margin-top: 10px;"></div>
 
 <div class="modal fade" id="requestModal" tabindex="-1" role="dialog" aria-hidden="true">
 	<div class="modal-dialog" style="width: 600px;">

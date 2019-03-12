@@ -9,3 +9,4 @@ require('/var/www/anilibria/root/private/auth.php');
 
 countRating();
 updateGenreRating();
+showSitemap();

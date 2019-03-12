@@ -46,7 +46,7 @@ body {
 .news-block {
 	overflow: auto;
 	word-wrap: break-word;
-	margin-top: 15px;
+	margin-top: 10px;
 	background-color: #fff;
 	padding: 10px 20px;
 	border-radius: 4px;

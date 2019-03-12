@@ -53,6 +53,6 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
 	<div style="margin-top:10px;"></div>
 </div>
 
-<div id="vk_comments" style="margin-top: 15px;"></div>
+<div id="vk_comments" style="margin-top: 10px;"></div>
 
 <?php require($_SERVER['DOCUMENT_ROOT'].'/private/footer.php');?>

@@ -247,7 +247,7 @@ function startSession($row){
 	$query = $db->prepare('SELECT `id` FROM `session` WHERE `uid` = :uid ORDER BY `time`');
 	$query->bindParam(':uid', $row['id']);
 	$query->execute();
-	if($query->rowCount() > 10){
+	if($query->rowCount() > 50){
 		$close = $query->fetch();
 		$query = $db->prepare('DELETE FROM `session` WHERE `id` = :id');
 		$query->bindParam(':id', $close['id']);
@@ -1121,12 +1121,48 @@ function isBlock($str){
 	return false;
 }
 
+function adsUrl(){
+	global $var, $cache; $host = []; $min = '10';
+	if(!checkADS() || geoip_country_code_by_name($var['ip']) != 'RU'){
+		return 'player.js';
+	}
+	$arr = [
+		'player.mix.js' => $min,
+		'player.zet.js' => $min,
+		'player.reyden.js' => $min,
+	];
+	$tmp = $cache->get('playerStatAds');
+	if($tmp !== false){
+		$arr = [];
+		$tmp = json_decode($tmp, true);
+		foreach($tmp as $key => $val){
+			if($val < $min){
+				$arr["$key"] = $min;
+			}else{
+				$arr["$key"] = $val['percent'];
+			}
+		}
+	}
+	foreach($arr as $key => $val){
+		$host = array_merge($host, array_fill(0, $val, $key));
+	}
+	shuffle($host);
+	return $host[random_int(0, count($host) - 1)];
+}
+
 function showRelease(){
 	global $db, $user, $var;
 	$status = ['0' => 'В работе', '1' => 'Завершен'];
 	function release404(){
 		header('HTTP/1.0 404 Not Found');
 		return str_replace('{error}', '<center><img src="/img/404.png"></center>', getTemplate('error'));
+	}
+	function lowerMove(){
+		if(preg_match('/[[:upper:]]/', $_SERVER['REQUEST_URI'])){
+			header('HTTP/1.1 301 Moved Permanently');
+			header('Location: ' . mb_strtolower($_SERVER['REQUEST_URI']));
+			die;
+		}
 	}
 	if(empty($_GET['code'])){
 		return release404();
@@ -1137,6 +1173,7 @@ function showRelease(){
 	if($query->rowCount() != 1){
 		return release404();
 	}
+	lowerMove();
 	$release = $query->fetch();
 	$var['release']['block'] = false;
 	if(!$user || $user['access'] == 1){
@@ -1495,11 +1532,7 @@ function footerJS(){
 			}
 			$tmp = getReleaseVideo($var['release']['id']);
 			if(!empty($tmp) && !$var['release']['block']){
-				if(checkADS()){	
-					$tmpPlayer = str_replace('{playerjs}', fileTime('/js/playerjs.js'), getTemplate('playerjs'));
-				}else{
-					$tmpPlayer = str_replace('{playerjs}', fileTime('/js/playerjs2.js'), getTemplate('playerjs'));
-				}
+				$tmpPlayer = str_replace('{playerjs}', fileTime('/js/'.adsUrl()), getTemplate('playerjs'));
 				$result .= str_replace('{playlist}', $tmp, $tmpPlayer);
 			}
 			unset($tmp);
@@ -2673,6 +2706,7 @@ function randomRelease(){
 		}
 		$cache->set('randomRelease', json_encode($arr), 300);
 	}
+	shuffle($arr);
 	$key = random_int(0, count($arr)-1);
 	return $arr[$key];
 }
@@ -2695,4 +2729,22 @@ function updateGenreRating(){
 		$update->bindParam(':id', $row['id']);
 		$update->execute();
 	}
+}
+
+function randCheck($x){
+	$rand = random_int(1, 100);
+	if($rand > $x){
+		return false;
+	}
+	return true;
+}
+
+function showSitemap(){
+	global $db; $release = '';
+	$query = $db->query('SELECT `code` FROM `xrelease` WHERE `status` != 3');
+	while($row = $query->fetch()){
+		$release .= "\t<url><loc>https://www.anilibria.tv/release/{$row['code']}.html</loc></url>\n";
+	}
+	$result = str_replace('{release}', rtrim($release), getTemplate('sitemap'));
+	file_put_contents('/var/www/anilibria/root/sitemap.xml', $result);
 }

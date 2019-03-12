@@ -24,6 +24,8 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
     line-height: 30px;
     border-radius: 3px;
     color: white;
+    width: 826px;
+    margin-left: 7px;
 }
 
 .day span{

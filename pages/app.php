@@ -48,7 +48,7 @@ a#join-team-link, a#join-team-link:visited {
 	width: 200px;
 	height: 200px;
 	position: absolute;
-	background: url(/img/logo.png);
+	background: url(/img/android.png);
 	background-repeat: no-repeat;
 	background-size: cover;
 }
@@ -94,6 +94,6 @@ a#join-team-link, a#join-team-link:visited {
 	<div style="margin-top:10px;"></div>
 </div>
 
-<div id="vk_comments" style="margin-top: 15px;"></div>
+<div id="vk_comments" style="margin-top: 10px;"></div>
 
 <?php require($_SERVER['DOCUMENT_ROOT'].'/private/footer.php');?>

@@ -681,3 +681,11 @@ $(document).on("click", "[data-change-ads]", function(e) {
 		$("#changeAMes").html("(<font color="+color+">"+data.mes+"</font>)");
 	});
 });
+
+$(document).on("click", "[data-random-release]", function(e) {
+	$(this).blur();
+	e.preventDefault();
+	$.post("//"+document.domain+"/public/random.php", { 'js': '1' }, function(data){
+		document.location.href="/release/"+data+".html";
+	});
+});

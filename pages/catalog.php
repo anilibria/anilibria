@@ -18,7 +18,7 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
 .simpleFilter {
 	background-color: #3e3e3e;
 	padding: 25px 25px;
-	margin-top: 15px;
+	margin-top: 10px;
 	min-height: 150px;
 	border-radius: 4px;
 }
@@ -136,7 +136,7 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
 	<div class="clear"></div>
 </div>
 
-<div style="margin-top: 15px;">
+<div style="margin-top: 12px;">
 	<table class="simpleCatalog" style="width: 100%;">
 	<tbody>
 
@@ -144,7 +144,7 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
 	</table>
 </div>
 	
-<div id="xpagination" style="display: table; text-align: center; margin: 15px auto 0; padding: none;"></div>
+<div id="xpagination" style="display: table; text-align: center; margin: 30px auto 0; padding: none;"></div>
 
 </div>
 

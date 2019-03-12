@@ -85,7 +85,6 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
 				<div class="teamright">МАСТЕРА</div>
 		</div>
 		<ul>
-			<li><span style="color: #339966;">Aemi</span> - войсер</li>
 			<li><span style="color: #339966;">Ados</span> - войсер</li>
 			<li><span style="color: #339966;">December</span> - войсер</li>
 			<li><span style="color: #339966;">WhiteCroW</span> - войсер</li>
@@ -121,7 +120,6 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
 		</div>
 		<ul>
 			<li><span style="color: #339966;">HectoR</span> - войсер</li>
-			<li><span style="color: #339966;">Kanade Eu</span> - войсер</li>
 			<li><span style="color: #339966;">Gomer</span> - войсер</li>
 			<li><span style="color: #339966;">Arato</span> - войсер</li>
 			<li><span style="color: #339966;">Rexus</span> - войсер</li>

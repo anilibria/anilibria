@@ -34,12 +34,12 @@
 		<div class="<?php echo $xcss['footer']; ?>">
 			<div class="footer_left">
 				<div class="footer_left2">
-					<a href="http://www.animespirit.ru/" target="_blank"><img src="/img/button/1.jpg" alt=""></a>
-					<a href="http://allmult.com/" target="_blank"><img src="/img/button/2.gif" alt=""></a>
-					<a href="https://github.com/anilibria" target="_blank"><img src="/img/button/github.png" alt=""></a>
-					<a href="http://anidream.net/" target="_blank"><img src="/img/button/4.gif" alt=""></a>
-					<a href="http://anires.ru/pages/mainmenu.php" target="_blank"><img src="/img/button/5.gif" alt=""></a>
-					<a href="https://alice2k.work/" target="_blank"><img src="/img/button/alice2k.png" alt=""></a>
+					<a href="http://www.animespirit.ru/" target="_blank" rel="nofollow"><img src="/img/button/1.jpg" alt=""></a>
+					<a href="http://allmult.com/" target="_blank" rel="nofollow"><img src="/img/button/2.gif" alt=""></a>
+					<a href="https://github.com/anilibria" target="_blank" rel="nofollow"><img src="/img/button/github.png" alt=""></a>
+					<a href="http://anidream.net/" target="_blank" rel="nofollow"><img src="/img/button/4.gif" alt=""></a>
+					<a href="http://anires.ru/pages/mainmenu.php" target="_blank" rel="nofollow"><img src="/img/button/5.gif" alt=""></a>
+					<a href="https://alice2k.work/" target="_blank" rel="nofollow"><img src="/img/button/alice2k.png" alt=""></a>
 				</div>
 			</div>
 			<div class="footer_center">

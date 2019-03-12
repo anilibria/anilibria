@@ -141,9 +141,9 @@ function apiList(){
         $pagination['allPages'] = $pagination['allPages'] + 1;
         return $pagination;
     }
-    
-    function createPagination($allItemsCount) {
-        $startIndex = 0;
+	
+	function preparePagination() {
+		$startIndex = 0;
         $endIndex = 0;
         $page = 0;
         $perPage = 10;
@@ -165,19 +165,30 @@ function apiList(){
         
         $startIndex = $perPage * $page;
         $endIndex = $startIndex + $perPage - 1;
-        return [
+		
+		return [
             'page' => $page,
             'perPage' => $perPage,
-            'allPages' => intval($allItemsCount / $perPage),
-            'allItems' => $allItemsCount,
             'startIndex' => $startIndex,
             'endIndex' => $endIndex
+        ];
+	}
+    
+    function createPagination($allItemsCount) {
+		$prepared = preparePagination();
+        return [
+            'page' => $prepared['page'],
+            'perPage' => $prepared['perPage'],
+            'startIndex' => $prepared['startIndex'],
+            'endIndex' => $prepared['endIndex'],
+            'allPages' => intval($allItemsCount / $prepared['perPage']),
+            'allItems' => $allItemsCount
         ];
     }
     
     function proceedReleases($releases, $torrent){
 		$result = []; 
-		$filter = ['code', 'names', 'series', 'poster', /*'rating',*/ 'last', 'moon', 'status', 'type', 'genres', 'voices', 'year', 'day', 'description', 'blockedInfo', 'playlist', 'torrents', 'favorite'];
+		$filter = ['code', 'names', 'series', 'poster', /*'rating',*/ 'last', 'moon', 'status', 'type', 'genres', 'voices', 'year', 'day', 'description', 'announce', 'blockedInfo', 'playlist', 'torrents', 'favorite'];
         foreach($releases as $key => $val){
             $unsettedFileds = [];
 			$names = $val['names'];
@@ -327,7 +338,68 @@ function apiList(){
         return apiGetReleaseById($info, $torrent, $_POST['id']);
     }
     
-    
+    function getRawFeed() {
+        global $db;
+		$result = [];
+		
+		$pagination = preparePagination($count);
+        $startIndex = $pagination['startIndex'];
+        $perPage = $pagination['perPage'];
+		
+		$releaseQueryStr = "SELECT 'release' as type, `id` as id, `last` as timestamp FROM `xrelease`";
+		$youtubeQueryStr = "SELECT 'youtube' as type, `id` as id, `time` as timestamp FROM `youtube`";
+		$feedQueryStr = "SELECT type, id, timestamp FROM ($releaseQueryStr WHERE 1 UNION $youtubeQueryStr WHERE 1) AS feed";
+		$queryStr = "$feedQueryStr ORDER BY timestamp DESC LIMIT {$startIndex}, {$perPage}";
+		
+		$query = $db->query($queryStr);
+        while($row = $query->fetch()){
+            $result[] = [
+                'id' => intval($row['id']),
+                'type' => $row['type'],
+                'timestamp' => intval($row['timestamp'])
+            ];
+        }
+		
+		return $result;
+	}
+	
+	function apiGetFeed($info, $torrent) {
+        global $db;
+		$result = [];
+		$rawFeed = getRawFeed();
+		
+		foreach($rawFeed as $feedItem){
+            switch($feedItem['type']){
+				case 'release':
+					$result[] = ['release' => apiGetReleaseById($info, $torrent, $feedItem['id'])];
+				break;
+					
+				case 'youtube':
+					$query = $db->prepare('SELECT * FROM `youtube` WHERE `id` = :id');
+					$query->bindParam(':id', $feedItem['id']);
+					$query->execute();
+					if($row = $query->fetch()){
+						$result[] = ['youtube' => createYoutubeFromRow($row)];
+					}
+				break;
+			}
+        }
+		
+		return $result;
+	}
+	
+	function createYoutubeFromRow($row){
+		return [
+			'id' => intval($row['id']),
+			'title' => $row['title'],
+			'image' => '/upload/youtube/'.hash('crc32', $row['vid']).'.jpg',
+			'vid' => $row['vid'],
+			'views' => intval($row['view']),
+			'comments' => intval($row['comment']),
+			'timestamp' => intval($row['time'])
+		];
+	}
+	
     function apiGetYoutube(){
         global $db;
         $countQuery = $db->query('SELECT COUNT(*) FROM `youtube`');
@@ -340,17 +412,8 @@ function apiList(){
         $result = [];
         $query = $db->query("SELECT * FROM `youtube` ORDER BY `time` DESC LIMIT {$startIndex}, {$perPage}");
         while($row=$query->fetch()){
-            $result[] = [
-                'id' => intval($row['id']),
-                'title' => $row['title'],
-                'image' => '/upload/youtube/'.hash('crc32', $row['vid']).'.jpg',
-                'vid' => $row['vid'],
-                'views' => intval($row['view']),
-                'comments' => intval($row['comment']),
-                'timestamp' => intval($row['time'])
-            ];
+            $result[] = createYoutubeFromRow($row);
         }
-        
         
         return [
             'items' => $result,
@@ -399,6 +462,26 @@ function apiList(){
 			'resultPattern' => 'https?:\/\/(?:(?:www|api)?\.)?anilibria\.tv\/public\/vk\.php([?&]code)',
 			'errorUrlPattern' => 'https?:\/\/(?:(?:www|api)?\.)?anilibria\.tv\/pages\/vk\.php'
 		];
+		return $result;
+	}
+													
+	
+	function apiGetSchedule($info, $torrent) {
+		global $db, $var;
+		$result = [];
+		foreach($var['day'] as $key => $val){
+			$query = $db->prepare('SELECT `id` FROM `xrelease` WHERE `day` = :day AND `status` = 1');
+			$query->bindParam(':day', $key);
+			$query->execute();
+			$dayReleases = [];
+			while($row = $query->fetch()){
+				$dayReleases[] = apiGetReleaseById($info, $torrent, $row['id']);
+			}
+			$result[] = [
+				'day' => $key,
+				'items' => $dayReleases
+			];
+		}
 		return $result;
 	}
 	
@@ -468,6 +551,14 @@ function apiList(){
             return apiGetReleases($info, $torrent);
         break;
             
+		case 'schedule':
+            return apiGetSchedule($info, $torrent);
+        break;
+			
+		case 'feed':
+            return apiGetFeed($info, $torrent);
+        break;
+			
         case 'genres':
             return apiGetGenres();
         break;
@@ -543,7 +634,7 @@ function apiList(){
 
 function updateApiCache(){
 	global $db, $cache, $user, $var;
-	$query = $db->query('SELECT `id`, `name`, `ename`, `rating`, `last`, `moonplayer`, `description`, `day`, `year`, `genre`, `voice`, `type`, `status`, `code`, `block` FROM `xrelease` WHERE `status` != 3 ORDER BY `last` DESC');
+	$query = $db->query('SELECT `id`, `name`, `ename`, `rating`, `last`, `moonplayer`, `description`, `announce`, `day`, `year`, `genre`, `voice`, `type`, `status`, `code`, `block` FROM `xrelease` WHERE `status` != 3 ORDER BY `last` DESC');
 	while($row=$query->fetch()){
         
         $names = [];
@@ -607,6 +698,14 @@ function updateApiCache(){
 			$moon = $row['moonplayer'];
 		}
 		
+		$announce = $row['announce'];
+		if(!empty($announce)) {
+			$announce = trim($announce);
+		}
+		if(empty($announce)) {
+			$announce = NULL;
+		}
+		
 		$info[$row['id']] = [
 			'id' => intval($row['id']),
 			'code' => $row['code'],
@@ -616,6 +715,7 @@ function updateApiCache(){
             'rating' => $row['rating'],
 			'last' => $row['last'],
 			'moon' => $moon,
+			'announce' => $announce,
 			'status' => $var['status'][$row['status']],
 			'type' => $row['type'],
 			'genres' => $genres,
@@ -720,7 +820,12 @@ class ApiResponse {
                 $e->getCode(),
                 $e->getDescription()
             );
-        } catch(Exception $e) {
+        } catch (Throwable $e) {
+			$this->error(
+                $e->getMessage(),
+                $e->getCode()
+            );
+		} catch(Exception $e) {
             $this->error(
                 $e->getMessage(),
                 $e->getCode()
