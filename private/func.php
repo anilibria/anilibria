@@ -862,12 +862,19 @@ function upload_avatar() {
 	_message2("$tmp/$name.jpg");
 }
 
-function getTemplate($template){
-	$file = $_SERVER['DOCUMENT_ROOT']."/private/template/$template.html";
-	if(!file_exists($file)){
-		return ['err' => true, 'mes' => 'Template not exists'];
+function getTemplate($template, $arrData = []){
+	if(substr($template, -4) === ".php"){
+		ob_start();
+		$ret = include $_SERVER['DOCUMENT_ROOT']."/private/template/$template";
+		if($ret) $ret = ob_get_contents();
+		ob_end_clean();
+	}else{
+		$file = $_SERVER['DOCUMENT_ROOT']."/private/template/$template.html";
+		$ret = file_get_contents($file);
 	}
-	return file_get_contents($file);
+
+	if($ret === false) return ['err' => true, 'mes' => 'Template not exists'];
+	return $ret;
 }
 
 function saveUserValues(){
