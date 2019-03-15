@@ -96,6 +96,9 @@ $xcss = randomClassName();
 		<style><?php echo $xcss['css']; ?></style>
 	</head>
 	<body>
+		<?php if($user && $user['access'] >= 3){
+			echo getTemplate('_editorpanel.php', [ 'user'=>$user ]);
+		} ?>
 		<input type="hidden" id="csrf_token" value='<?php echo $csrf_token; ?>'>
 		<div id="headercontent"></div>
 		<div class="<?php echo $xcss['link']; ?>">
