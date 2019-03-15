@@ -689,3 +689,41 @@ $(document).on("click", "[data-random-release]", function(e) {
 		document.location.href="/release/"+data+".html";
 	});
 });
+
+$(function bugreport(){
+	$('#report-send').on('show.bs.modal', function() {
+		if($('#report-info').hasClass('text-success')){
+			$('#report-msg').val('').attr('disabled', false).trigger('input', ['show']);
+		}
+	});
+
+	$('#report-msg').on('input keyup', function(e, trigger){
+		if($.trim(this.value)){
+			$('[data-report-send]').attr('disabled', false);
+		}else{
+			$('[data-report-send]').attr('disabled', true);
+		}
+		if(trigger != 'show') $('#report-info').removeClass('text-danger text-success').text('');
+	});
+
+	$('[data-report-send]').on('click', function(){
+		$('#report-msg, [data-report-send]').attr('disabled', true);
+		$('#report-info').removeClass('text-danger text-success').addClass('text-info').text('Подождите...');
+
+		$.post('/public/bugreport/add.php', {'rid': $('#report-send').data('rid'), 'msg': $('#report-msg').val(), 'csrf_token': csrf_token}, null, 'json')
+		.then(function(json){
+			console.log(json);
+			if(json.err == 'ok'){
+				$('#report-info').removeClass('text-info text-danger').addClass('text-success').text(json.mes);
+			}else{
+				return $.Deferred().reject(json);
+			}
+		})
+		.fail(function(jqXHR){
+			console.log(jqXHR);
+			var text = jqXHR.mes ? jqXHR.mes : (jqXHR.status ? jqXHR.status + ': ' + jqXHR.statusText : 'Ошибка сети');
+			$('#report-info').removeClass('text-info text-success').addClass('text-danger').text(text);
+			$('#report-msg, [data-report-send]').attr('disabled', false);
+		});
+	});
+});

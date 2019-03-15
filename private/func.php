@@ -1264,7 +1264,14 @@ function showRelease(){
 	$page = str_replace('{timing}', $release['timing'], $page);
 	
 	$page = str_replace('{description}', $release['description'], $page);
-	
+
+	//кнопка "Сообщить об ошибке"
+	$template = '';
+	if(($user ? $user['access'] : 0) >= CONF_BUGREPORT_BUTTON_ACCESS){
+		$template = getTemplate('bugreport-button.php', [ 'rid'=>$release['id'], 'name'=>$release['name'] ]);
+	}
+	$page = str_replace('{bugreport-button}', is_array($template) ? '' : $template, $page);
+
 	$poster = $_SERVER['DOCUMENT_ROOT'].'/upload/release/350x500/'.$release['id'].'.jpg';
 	if(!file_exists($poster)){
 		$tmpImg = '/upload/release/350x500/default.jpg';

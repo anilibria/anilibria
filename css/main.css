@@ -866,3 +866,12 @@ button.favorites {
 .btn {
 	font-size: 15px !important;
 }
+
+/*bugreport*/
+#report-msg {width:100% !important; min-height:12ex;}
+@keyframes blink { 45%, 55% {opacity:1;} }
+#report-info.text-info { animation:blink 2s linear infinite; opacity:0.3; }
+#report-info .modal-title span { display:inline-block; }
+#report-send .modal-footer {display:table; width:100%;}
+#report-send .modal-footer > div {display:table-cell; width:20%; white-space:nowrap;}
+#report-send #report-info {width:80%; text-align:center; vertical-align:middle; white-space:normal;}

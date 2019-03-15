@@ -212,3 +212,46 @@ ALTER TABLE `xrelease`
 
 ALTER TABLE `youtube`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+
+-- кнопка "Сообщить об ошибке"
+-- Добавляем UNSIGNED автоинкрементному полю `id` в таблице `users`
+ALTER TABLE `users` CHANGE COLUMN `id` `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+-- и соответствующим полям в других таблицах
+ALTER TABLE `favorites` CHANGE COLUMN `uid` `uid` INT(11) UNSIGNED NOT NULL;
+ALTER TABLE `log_ip` CHANGE COLUMN `uid` `uid` INT(11) UNSIGNED NOT NULL;
+ALTER TABLE `session` CHANGE COLUMN `uid` `uid` INT(11) UNSIGNED NOT NULL;
+
+-- То же самое для поля `id` в таблице `xrelease`
+ALTER TABLE `xrelease` CHANGE COLUMN `id` `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE `favorites` CHANGE COLUMN `rid` `rid` INT(11) UNSIGNED NOT NULL;
+ALTER TABLE `f_tmp` CHANGE COLUMN `rid` `rid` INT(11) UNSIGNED NOT NULL;
+ALTER TABLE `xbt_files` CHANGE COLUMN `rid` `rid` INT(11) UNSIGNED NOT NULL;
+
+-- Создаём наши таблицы
+CREATE TABLE `bugreport_index` (
+  `rid` int(10) unsigned NOT NULL, -- ID релиза
+  `lastopen_at` datetime NOT NULL DEFAULT '0000-00-00 00:00:00', -- дата последнего сообщения в статусе "open"
+  `count_open` mediumint(8) unsigned NOT NULL DEFAULT 0,
+  `count_close` mediumint(8) unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`rid`),
+  KEY `lastopenAt` (`lastopen_at`),
+  CONSTRAINT `fk_xrelease_id` FOREIGN KEY (`rid`) REFERENCES `xrelease` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `bugreport` (
+  `state` enum('open','close') NOT NULL, -- состояние сообщения
+  `rid` int(10) unsigned NOT NULL, -- ID релиза, к которому относится это сообщение
+  `id` mediumint(8) unsigned NOT NULL, -- номер сообщения для данного релиза
+  `opened_by` int(10) unsigned DEFAULT NULL, -- ID пользователя, отправившего сообщение (если NULL - отправил аноним)
+  `opened_at` datetime NOT NULL DEFAULT '0000-00-00 00:00:00', -- время создания сообщения
+  `opened_ip` varbinary(16) NOT NULL,
+  `closed_by` int(10) unsigned DEFAULT NULL, -- ID администратора, закрывшего проблему
+  `closed_at` datetime NOT NULL DEFAULT '0000-00-00 00:00:00', -- время закрытия проблемы
+  `msg` text NOT NULL, -- текст сообщения
+  PRIMARY KEY (`rid`,`id`),
+  KEY `state_rid_openedAt` (`state`,`rid`,`opened_at`),
+  KEY `openedBy` (`opened_by`),
+  CONSTRAINT `fk_bi_rid` FOREIGN KEY (`rid`) REFERENCES `bugreport_index` (`rid`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_users_id` FOREIGN KEY (`opened_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
