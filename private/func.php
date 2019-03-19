@@ -43,15 +43,12 @@ function half_string_hash($s){
 	return hash($conf['hash_algo'], substr($s, round(strlen($s)/2)));
 }
 
-function session_hash($login, $passwd, $access, $rand = '', $time = ''){
+function session_hash($login, $passwd, $access, $rand = ''){
 	global $conf, $var;
 	if(empty($rand)){
 		$rand = genRandStr(8);
 	}
-	if(empty($time)){
-		$time = $var['time']+60*60*24*10;
-	}
-	return [$rand.hash($conf['hash_algo'], $rand.$var['user_agent'].$time.$login.sha1(half_string_hash($passwd))), $time];
+	return [$rand.hash($conf['hash_algo'], $rand.$var['user_agent'].$login.sha1(half_string_hash($passwd))), $var['time']+60*60*24*30];
 }
 
 function _exit(){
@@ -92,12 +89,15 @@ function csrf_token(){
 
 function createSecret($params){
 	global $conf;
+	if(empty($_SESSION['secret'])){
+		return false;
+	}
 	return hash($conf['hash_algo'], $_SESSION['secret'].$params);
 }
 
 function checkSecret($hash, $params){
 	global $conf;
-	if($hash != hash($conf['hash_algo'], $_SESSION['secret'].$params)){
+	if(empty($_SESSION['secret']) || $hash != hash($conf['hash_algo'], $_SESSION['secret'].$params)){
 		return false; 
 	}
 	return true;	
@@ -175,6 +175,9 @@ function oAuthLogin(){
 	if(!$row){
 		$htime = $var['time']+60*60;
 		$hash = createSecret($id.$htime);
+		if(!$hash){
+			_message2('wrong', 'error');
+		}
 		die(header("Location: https://".$_SERVER['SERVER_NAME']."/pages/vk.php?id=$id&time=$htime&hash=$hash"));
 	}
 	if(!empty($row['2fa'])){
@@ -244,15 +247,6 @@ function startSession($row){
 	$query->bindParam(':info', $var['user_agent']);
 	$query->execute();
 	$sid = $db->lastInsertId();
-	$query = $db->prepare('SELECT `id` FROM `session` WHERE `uid` = :uid ORDER BY `time`');
-	$query->bindParam(':uid', $row['id']);
-	$query->execute();
-	if($query->rowCount() > 50){
-		$close = $query->fetch();
-		$query = $db->prepare('DELETE FROM `session` WHERE `id` = :id');
-		$query->bindParam(':id', $close['id']);
-		$query->execute();
-	}
 	$_SESSION['sess'] = $hash[0];
 	$query = $db->prepare('UPDATE `users` SET `last_activity` = :time WHERE `id` = :id');
 	$query->bindParam(':time', $var['time']);
@@ -408,8 +402,14 @@ function registration(){
 
 function auth(){
 	global $conf, $db, $var, $user;
+	if(random_int(1, 1000) == 1){
+		$tmp = time();
+		$query = $db->prepare('DELETE FROM `session` WHERE `time` < :time');
+		$query->bindParam(':time', $tmp);
+		$query->execute();
+	}	
 	if(!empty($_SESSION['sess'])){
-		$query = $db->prepare('SELECT `id`, `uid`, `hash`, `time` FROM `session` WHERE `hash` = :hash AND `time` > unix_timestamp(now())');
+		$query = $db->prepare('SELECT `id`, `uid`, `hash` FROM `session` WHERE `hash` = :hash AND `time` > unix_timestamp(now())');
 		$query->bindParam(':hash', $_SESSION['sess']);
 		$query->execute();
 		if($query->rowCount() != 1){
@@ -425,18 +425,16 @@ function auth(){
 			return;
 		}
 		$row = $query->fetch();
-		if($_SESSION['sess'] != session_hash($row['login'], $row['passwd'], $row['access'], substr($session['hash'], 0, 8), $session['time'])[0]){
+		if($_SESSION['sess'] != session_hash($row['login'], $row['passwd'], $row['access'], substr($session['hash'], 0, 8))['0']){	
 			_exit();
 			return;
 		}
-		if($var['time'] > $session['time']){			
-			$hash = session_hash($row['login'], $row['passwd'], $row['access']);
-			$query = $db->prepare('UPDATE `session` set `hash` = :hash, `time` = :time WHERE `id` = :id');
-			$query->bindParam(':hash', $hash[0]);
-			$query->bindParam(':time', $hash[1]);
+		if(random_int(1, 10) == 1){
+			$tmp = $var['time']+60*60*24*30;
+			$query = $db->prepare('UPDATE `session` set `time` = :time WHERE `id` = :id');
+			$query->bindParam(':time', $tmp);
 			$query->bindParam(':id', $session['id']);
 			$query->execute();
-			$_SESSION['sess'] = $hash[0];
 		}
 		$user = [	'id' => $row['id'], 
 					'login' => $row['login'], 
@@ -640,7 +638,7 @@ function torrentExist($id){
 
 function torrentAdd($hash, $rid, $json, $completed = 0){
 	global $db;
-	$query = $db->prepare('INSERT INTO `xbt_files` (`info_hash`, `mtime`, `ctime`, `flags`, `completed`, `rid`, `info`) VALUES( :hash , UNIX_TIMESTAMP(), UNIX_TIMESTAMP(), 0, :completed, :rid, :info)');
+	$query = $db->prepare('INSERT INTO `xbt_files` (`info_hash`, `mtime`, `ctime`, `flags`, `completed`, `rid`, `info`) VALUES( :hash , unix_timestamp(now()), unix_timestamp(now()), 0, :completed, :rid, :info)');
 	$query->bindParam(':hash', $hash);
 	$query->bindParam(':rid', $rid);
 	$query->bindParam(':completed', $completed);
@@ -1184,7 +1182,7 @@ function showRelease(){
 	if(empty($_GET['code'])){
 		return release404();
 	}
-	$query = $db->prepare('SELECT `id`, `name`, `ename`, `aname`, `moonplayer`, `genre`, `voice`, `year`, `type`, `translator`, `editing`, `decor`, `timing`, `description`, `announce`, `status`, `day`, `code`, `block` FROM `xrelease` WHERE `code` = :code');
+	$query = $db->prepare('SELECT `id`, `name`, `ename`, `aname`, `moonplayer`, `genre`, `voice`, `year`, `type`, `translator`, `editing`, `decor`, `timing`, `description`, `season`, `announce`, `status`, `day`, `code`, `block` FROM `xrelease` WHERE `code` = :code');
 	$query->bindParam(':code', $_GET['code']);
 	$query->execute();
 	if($query->rowCount() != 1){
@@ -1264,6 +1262,7 @@ function showRelease(){
 	$page = str_replace('{timing}', $release['timing'], $page);
 	
 	$page = str_replace('{description}', $release['description'], $page);
+	$page = str_replace('{season}', $release['season'], $page);
 
 	//кнопка "Сообщить об ошибке"
 	$template = '';
@@ -1418,7 +1417,7 @@ function xrelease(){
 	if(empty($_POST['data'])){
 		_message('empty', 'error');
 	}
-	$arr = ['name', 'ename', 'aname', 'year', 'type', 'genre', 'voice', 'translator', 'editing', 'decor', 'timing', 'announce', 'status', 'moonplayer', 'description', 'day', 'block'];
+	$arr = ['name', 'ename', 'aname', 'year', 'type', 'genre', 'voice', 'translator', 'editing', 'decor', 'timing', 'announce', 'status', 'moonplayer', 'description', 'day', 'block', 'season'];
 	$post = json_decode($_POST['data'], true);
 	foreach($arr as $key){
 		if(array_key_exists($key, $post)){
@@ -1491,7 +1490,7 @@ function auth_history(){
 	$query->execute();
 	while($row = $query->fetch()){
 		$status = false;
-		$tmp = $db->prepare('SELECT `id` FROM `session` WHERE `id` = :id AND `time` > UNIX_TIMESTAMP()');
+		$tmp = $db->prepare('SELECT `id` FROM `session` WHERE `id` = :id AND `time` > unix_timestamp(now())');
 		$tmp->bindParam(':id', $row['sid']);
 		$tmp->execute();
 		if($tmp->rowCount() == 1){
@@ -1597,6 +1596,8 @@ function footerJS(){
 				  }, 75);
 				</script>
 			';
+			$result .= '<script src="'.fileTime('/js/player.js').'" type="text/javascript"></script>';
+			$result .= '<script>var player = new Playerjs({ id:"anilibriaPlayer", "title":"&nbsp;", "file":"'.fileTime('/upload/donate/1.mp4').'", poster:"'.fileTime('/upload/donate/1.jpg').'", preroll_deny:"vast2427,vast2585"});</script>';
 		break;
 		case '404':
 		case '403':
@@ -2761,14 +2762,6 @@ function updateGenreRating(){
 	}
 }
 
-function randCheck($x){
-	$rand = random_int(1, 100);
-	if($rand > $x){
-		return false;
-	}
-	return true;
-}
-
 function showSitemap(){
 	global $db; $release = '';
 	$query = $db->query('SELECT `code` FROM `xrelease` WHERE `status` != 3');
@@ -2777,4 +2770,101 @@ function showSitemap(){
 	}
 	$result = str_replace('{release}', rtrim($release), getTemplate('sitemap'));
 	file_put_contents('/var/www/anilibria/root/sitemap.xml', $result);
+}
+
+function showNewSeason() {
+    global $db, $user;
+    $result = '';
+    $findSeason = 'весна';
+    $findYear = '2019';
+    $query = $db->prepare('SELECT `id`, `name`, `ename`, `genre`, `season`, `description` FROM `xrelease` WHERE `season` = :season AND `year` = :year');
+    $query->bindParam(':season', $findSeason);
+    $query->bindParam(':year', $findYear);
+    $query->execute();
+    while($row=$query->fetch()) {
+        $img = fileTime('/upload/release/270x390/'.$row['id'].'.jpg');
+        if(!$img){
+            $img = '/upload/release/270x390/default.jpg';
+        }
+
+        $tmp = getTemplate('season-vote');
+        $tmp = str_replace('{id}', $row['id'], $tmp);
+        $tmp = str_replace('{name}', $row['name'], $tmp);
+        $tmp = str_replace('{ename}', $row['ename'], $tmp);
+        $tmp = str_replace('{genres}', $row['genre'], $tmp);
+        $tmp = str_replace('{season}', $row['season'], $tmp);
+        $tmp = str_replace('{description}', $row['description'], $tmp);
+        $tmp = str_replace('{votes}', updateVoteInfo($row['id']), $tmp);
+        $tmp = str_replace('{img}', $img, $tmp);
+        $tmp = str_replace('{voteBtn}', checkIfVoted($user['id'],$row['id']), $tmp);
+        if($user) {
+            $favBtn = '<button data-upcoming-favorites class="{fav-state}" id="{rel-id}">{fav-text}</button>';
+            $favBtn = str_replace('{rel-id}', $row['id'], $favBtn);
+            if (isFavorite($user['id'], $row['id'])) {
+                $favBtn = str_replace('{fav-state}', 'fav-added', $favBtn);
+                $favBtn = str_replace('{fav-text}', 'УДАЛИТЬ ИЗ ИЗБРАННОГО', $favBtn);
+            } else {
+                $favBtn = str_replace('{fav-state}', 'fav-clear', $favBtn);
+                $favBtn = str_replace('{fav-text}', 'ДОБАВИТЬ В ИЗБРАННОЕ', $favBtn);
+            }
+
+            $tmp = str_replace('{favBtn}', $favBtn, $tmp);
+        } else {
+            $tmp = str_replace('{favBtn}', "", $tmp);
+        }
+        $result .= $tmp;
+    }
+    return $result;
+}
+
+function updateVoteInfo($rid) {
+    global $db;
+    $count = $db->prepare('SELECT COUNT(*) FROM `upcoming_votes` WHERE `urid` = :rid');
+    $count->bindParam(':rid', $rid);
+    $count->execute();
+    $result = $count->fetch();
+    return $result[0];
+}
+
+function checkIfVoted($uid, $rid) {
+    global $db;
+    $query = $db->prepare('SELECT * FROM `upcoming_votes` WHERE `user_id` = :usid AND `urid` = :rid');
+    $query->bindParam(':usid', $uid);
+    $query->bindParam(':rid', $rid);
+    $query->execute();
+    if($query->rowCount() > 0) {
+        $heartIco = '<img src="/img/other/heart-solid.svg" width="20px" height="20px" />';
+        $result = "<a data-upcoming-vote class=\"upcoming_season_like upcoming_wait\" id=\"$rid\" href=\"\">ЖДУ ЭТО АНИМЕ $heartIco</a>";
+    } else {
+        $heartIco = '<img src="/img/other/heart-regular.svg" width="20px" height="20px" />';
+        $result = "<a data-upcoming-vote class=\"upcoming_season_like\" id=\"$rid\" href=\"\">ЖДАТЬ ЭТО АНИМЕ $heartIco</a>";
+    }
+    return $result;
+}
+
+function changeVoteCount() {
+	global $db, $user;
+	if(!empty($_POST['rid']) && $user) {
+		$query = $db->prepare('SELECT * FROM `upcoming_votes` WHERE `user_id` = :usid AND `urid` = :rid');
+		$query->bindParam(':usid', $user['id']);
+		$query->bindParam(':rid', $_POST['rid']);
+		$query->execute();
+		if($query->rowCount() > 0) {
+			while($row=$query->fetch()) {
+				$delete = $db->prepare('DELETE FROM `upcoming_votes` WHERE `user_id` = :uid AND `urid` = :rid');
+				$delete->bindParam(':uid', $user['id']);
+				$delete->bindParam(':rid', $_POST['rid']);
+				$delete->execute();
+				_message2('del');
+			}
+		} else {
+			$insert = $db->prepare('INSERT INTO `upcoming_votes` (`user_id`, `urid`) VALUES (:uid, :rid)');
+			$insert->bindParam(':uid', $user['id']);
+			$insert->bindParam(':rid', $_POST['rid']);
+			$insert->execute();
+            _message2('add');
+		}
+	} else {
+		_message('unauthorized', 'error');
+	}
 }

@@ -474,6 +474,7 @@ $(document).on('click', '[data-release-new], [data-release-update]', function(e)
 		'day': $('select[id=nDay]').val(),
 		'moonplayer': $('input[id=nMoon]').val(),
 		'description': $('textarea[id=nDescription]').val(),
+		'season': $('input[id=nSeason]').val()
 	};
 	if($(this).data('release-update') !== undefined){
 		sendData = $.extend(sendData, {'update': $('input[id=releaseID]').val()}); 
@@ -726,4 +727,42 @@ $(function bugreport(){
 			$('#report-msg, [data-report-send]').attr('disabled', false);
 		});
 	});
+});
+
+$(document).on("click", "[data-upcoming-vote]", function(e) {
+	$(this).blur();
+	e.preventDefault();
+	rid = $(this).attr("id");
+	$.post("//"+document.domain+"/public/upcoming-vote.php", {'rid': rid, 'csrf_token': csrf_token }, function(json){
+		data = JSON.parse(json);
+		if(data.err == 'ok') {
+			var url = "https://"+document.domain+"/public/vote-update.php?id="+rid;
+            $('span[id='+rid+']').load(url);
+		}
+        if(data.err == 'ok' && data.mes == 'add') {
+            $('a[id='+rid+']').addClass("upcoming_wait").html("ЖДУ ЭТО АНИМЕ <img src=\"/img/other/heart-solid.svg\" width=\"20px\" height=\"20px\" />");
+        }
+        if(data.err == 'ok' && data.mes == 'del') {
+            $('a[id='+rid+']').removeClass("upcoming_wait").html("ЖДАТЬ ЭТО АНИМЕ <img src=\"/img/other/heart-regular.svg\" width=\"20px\" height=\"20px\" />");
+        }
+	});
+});
+
+$(document).on('click', '[data-upcoming-favorites]', function(e){
+    var _this = $(this);
+    rid = _this.attr("id");
+    $.post("//"+document.domain+"/public/favorites.php", {'rid': rid, 'csrf_token': csrf_token}, function(json){
+        data = JSON.parse(json);
+        if(data.err == 'ok') {
+            if(_this.hasClass("fav-added")) {
+                _this.removeClass("fav-added");
+                _this.addClass("fav-clear");
+                _this.html("ДОБАВИТЬ В ИЗБРАННОЕ");
+            }else {
+                _this.removeClass("fav-clear");
+                _this.addClass("fav-added");
+                _this.html("УДАЛИТЬ ИЗ ИЗБРАННОГО");
+            }
+        }
+    });
 });

@@ -22,6 +22,8 @@ function randomClassName(){
 	$data[] = ['img' => 'ragnarok', 'left' => '0px', 'url' => '/ro'];
 	$data[] = ['img' => 'bs', 'left' => '-195px', 'url' => '/bs'];
 	$data[] = ['img' => 'storm', 'left' => '0px', 'url' => '/storm'];
+	//$data[] = ['img' => 'cro', 'left' => '0px', 'url' => '/cro'];
+	$data[] = ['img' => 'rise', 'left' => '0px', 'url' => '/rise'];
 	
 	$css = getTemplate('header');
 	$arr = ['header', 'main', 'content', 'side', 'footer', 'clear', 'link', 'headercontent'];
@@ -68,6 +70,20 @@ function randomClassName(){
 	}
 	$css = str_replace('{img}', $img, $css);
 	$css = str_replace('{left}', $left, $css);
+	
+	$px = $cache->get('adsH');
+	if($px === false){
+		$px = rand(2, 99);
+		if($px < 10){
+			$px = "0$px";
+		}
+		$cache->set('adsH', $px, 86400);
+	}
+	
+	$css = str_replace('{rand}', $px, $css);
+	$tmp = (int)$px;
+	$css = str_replace('{margin}', 10-"0.$tmp", $css);
+	
 	$result['css'] = $css;
 	return $result;
 }
