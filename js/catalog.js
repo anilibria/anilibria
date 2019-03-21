@@ -30,13 +30,15 @@ function getCatalog(page, update){
 	localStorage.setItem('catalogSort', sort);
 	year = '';
 	genre = '';
+	season = '';
 	xpage = 'favorites';
 	if(location.pathname.substring(1) != 'pages/favorites.php' && location.pathname.substring(1) != 'pages/new.php'){
 		year = $.trim($('#catalogYear').val().toString().replace(/,/g, ","));
 		genre = $.trim($('#catalogGenre').val().toString().replace(/,/g, ","));
+		season = $.trim($('#catalogSeason').val().toString().replace(/,/g, ","));
 		xpage = 'catalog';
 	}
-	search = {"year":year, "genre":genre};
+	search = {"year":year, "genre":genre, "season": season};
 	$.post("//"+document.domain+"/public/catalog.php", { 'page': page, 'search': JSON.stringify(search), 'xpage': xpage, 'sort': sort, 'finish': finish }, function(json){
 		data = JSON.parse(json);
 		if(data.err == 'ok'){

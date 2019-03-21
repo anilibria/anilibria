@@ -61,6 +61,17 @@
 				</p>
 			</div>
 		</div>
+		
+		<div class="modal fade" id="authPlsModal" tabindex="-1" role="dialog" aria-hidden="true">
+			<div class="modal-dialog" style="width: 500px;">
+				<div class="modal-content">
+					<div class="modal-body">
+						<pre style="margin-top: 7px;"><center>Пожалуйста, <a href="https://www.anilibria.tv/pages/login.php">авторизуйтесь</a> на сайте.</center></pre>
+					</div>
+				</div>
+			</div>
+		</div>
+		
 		<script src="<?php echo fileTime('/js/jquery.min.js');?>"></script>	
 		<script src="<?php echo fileTime('/js/bootstrap.min.js');?>"></script>
 		<script src="<?php echo fileTime('/js/main.js');?>"></script>

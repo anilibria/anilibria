@@ -21,7 +21,7 @@ function randomClassName(){
 	
 	$data[] = ['img' => 'ragnarok', 'left' => '0px', 'url' => '/ro'];
 	$data[] = ['img' => 'bs', 'left' => '-195px', 'url' => '/bs'];
-	$data[] = ['img' => 'storm', 'left' => '0px', 'url' => '/storm'];
+	//$data[] = ['img' => 'storm', 'left' => '0px', 'url' => '/storm'];
 	//$data[] = ['img' => 'cro', 'left' => '0px', 'url' => '/cro'];
 	$data[] = ['img' => 'rise', 'left' => '0px', 'url' => '/rise'];
 	
@@ -54,7 +54,7 @@ function randomClassName(){
 			$cache->set('adsCurrentDay', $cday, 172800);
 		}
 		*/
-		$key = 2;
+		$key = 0;
 		$ads = $data["$key"];
 		$test = $cache->get('adsCurrentID'.$key);
 		if($test === false){

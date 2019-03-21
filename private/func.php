@@ -1163,26 +1163,28 @@ function adsUrl(){
 	return prepareAdsUrl($arr, adsRandom($cache, $arr, $min));
 }
 
+function release404(){
+	global $var;
+	$var['title'] = '404';
+	header('HTTP/1.0 404 Not Found');
+	return str_replace('{error}', '<center><img src="/img/404.png"></center>', getTemplate('error'));
+}
+
+function lowerMove(){
+	if(preg_match('/[[:upper:]]/', $_SERVER['REQUEST_URI'])){
+		header('HTTP/1.1 301 Moved Permanently');
+		header('Location: ' . mb_strtolower($_SERVER['REQUEST_URI']));
+		die;
+	}
+}
+
 function showRelease(){
 	global $db, $user, $var;
 	$status = ['0' => 'В работе', '1' => 'Завершен'];
-	function release404(){
-		global $var;
-		$var['title'] = '404';
-		header('HTTP/1.0 404 Not Found');
-		return str_replace('{error}', '<center><img src="/img/404.png"></center>', getTemplate('error'));
-	}
-	function lowerMove(){
-		if(preg_match('/[[:upper:]]/', $_SERVER['REQUEST_URI'])){
-			header('HTTP/1.1 301 Moved Permanently');
-			header('Location: ' . mb_strtolower($_SERVER['REQUEST_URI']));
-			die;
-		}
-	}
 	if(empty($_GET['code'])){
 		return release404();
 	}
-	$query = $db->prepare('SELECT `id`, `name`, `ename`, `aname`, `moonplayer`, `genre`, `voice`, `year`, `type`, `translator`, `editing`, `decor`, `timing`, `description`, `season`, `announce`, `status`, `day`, `code`, `block` FROM `xrelease` WHERE `code` = :code');
+	$query = $db->prepare('SELECT `id`, `name`, `ename`, `aname`, `moonplayer`, `genre`, `voice`, `year`, `season`, `type`, `translator`, `editing`, `decor`, `timing`, `description`, `announce`, `status`, `day`, `code`, `block` FROM `xrelease` WHERE `code` = :code');
 	$query->bindParam(':code', $_GET['code']);
 	$query->execute();
 	if($query->rowCount() != 1){
@@ -1247,6 +1249,10 @@ function showRelease(){
 		$release['other'] = '';
 	}
 	
+	if(!empty($release['year']) && !empty($release['season'])){
+		$release['year'] = implode(' ', [$release['year'], $release['season']]).'.';
+	}
+	
 	$page = str_replace('{chosen-genre}', $str, $page);
 	$page = str_replace('{genre}', $release['genre'], $page);
 	$page = str_replace('{chosen}', getGenreList(), $page);
@@ -1262,7 +1268,6 @@ function showRelease(){
 	$page = str_replace('{timing}', $release['timing'], $page);
 	
 	$page = str_replace('{description}', $release['description'], $page);
-	$page = str_replace('{season}', $release['season'], $page);
 
 	//кнопка "Сообщить об ошибке"
 	$template = '';
@@ -1270,7 +1275,7 @@ function showRelease(){
 		$template = getTemplate('bugreport-button.php', [ 'rid'=>$release['id'], 'name'=>$release['name'] ]);
 	}
 	$page = str_replace('{bugreport-button}', is_array($template) ? '' : $template, $page);
-
+	
 	$poster = $_SERVER['DOCUMENT_ROOT'].'/upload/release/350x500/'.$release['id'].'.jpg';
 	if(!file_exists($poster)){
 		$tmpImg = '/upload/release/350x500/default.jpg';
@@ -1417,7 +1422,7 @@ function xrelease(){
 	if(empty($_POST['data'])){
 		_message('empty', 'error');
 	}
-	$arr = ['name', 'ename', 'aname', 'year', 'type', 'genre', 'voice', 'translator', 'editing', 'decor', 'timing', 'announce', 'status', 'moonplayer', 'description', 'day', 'block', 'season'];
+	$arr = ['name', 'ename', 'aname', 'year', 'season', 'type', 'genre', 'voice', 'translator', 'editing', 'decor', 'timing', 'announce', 'status', 'moonplayer', 'description', 'day', 'block'];
 	$post = json_decode($_POST['data'], true);
 	foreach($arr as $key){
 		if(array_key_exists($key, $post)){
@@ -1579,6 +1584,7 @@ function footerJS(){
 		case 'app':
 		case 'request':
 		case 'links':
+		case 'new-season':
 			$result .= str_replace('{page}', '', $vk);
 		break;
 		case 'donate':
@@ -2044,6 +2050,9 @@ function fileTime($file){
 }
 
 function sphinxPrepare($x){
+	$x = explode(',', $x);
+	$x = array_filter($x);
+	$x = implode(',', $x);
 	return preg_replace('/[^\w, ]+/u', '', $x);
 }
 
@@ -2201,28 +2210,42 @@ function showCatalog(){
 		return ['data' => $data, 'total' => $total];
 	}
 	function bSearch($sphinx, $page, $sort){
-		if(!empty($_POST['search'])){
-			$data = json_decode($_POST['search'], true);			
-			if(!isset($data['year']) || !isset($data['genre'])){
-				return false;
+		if(empty($_POST['search'])){
+			return false;
+		}
+		$search = []; $s = []; $arr = ['genre', 'year', 'season'];
+		$data = json_decode($_POST['search'], true);
+		foreach($arr as $val){
+			if(empty($data["$val"])){
+				continue;
 			}
-			$search[] = str_replace(',', '|', sphinxPrepare($data['year']));
-			$search[] = sphinxPrepare($data['genre']);			
-			$search = trim(implode(",", $search), ',');
-			if(!empty($search)){				
-				$query = $sphinx->prepare('SELECT count(*) as total FROM anilibria WHERE MATCH(:search) AND '.checkFinish());
-				$query->bindValue(':search', "@(genre,year) ($search)");
-				$query->execute();
-				$total =  $query->fetch()['total'];
-				
-				$query = $sphinx->prepare("SELECT `id` FROM anilibria WHERE MATCH(:search) AND ".checkFinish()." ORDER BY `{$sort}` DESC LIMIT {$page}, 12 OPTION max_matches=2012");
-				$query->bindValue(':search', "@(genre,year) ($search)");
-				$query->execute();
-				$data = $query->fetchAll(PDO::FETCH_ASSOC);
-				return ['data' => $data, 'total' => $total];
+			$tmp = sphinxPrepare($data["$val"]);
+			if($val == 'year' || $val == 'season'){
+				$tmp = str_replace(',', '|', sphinxPrepare($tmp));
+			}
+			if(!empty($tmp)){
+				$search["$val"] = $tmp;
 			}
 		}
-		return false;
+		foreach($search as $key => $val){
+			$s[] = "@{$key}({$val})";
+		}	
+
+		$s = implode(' ', $s);
+		if(empty($s)){
+			return false;
+		}
+		
+		$query = $sphinx->prepare('SELECT count(*) as total FROM anilibria WHERE MATCH(:search) AND '.checkFinish());
+		$query->bindValue(':search', "$s");
+		$query->execute();
+		$total =  $query->fetch()['total'];
+			
+		$query = $sphinx->prepare("SELECT `id` FROM anilibria WHERE MATCH(:search) AND ".checkFinish()." ORDER BY `{$sort}` DESC LIMIT {$page}, 12 OPTION max_matches=2012");
+		$query->bindValue(':search', "$s");
+		$query->execute();
+		$data = $query->fetchAll(PDO::FETCH_ASSOC);
+		return ['data' => $data, 'total' => $total];
 	}
 	
 	function cSearch($db, $user, $page){
@@ -2772,99 +2795,57 @@ function showSitemap(){
 	file_put_contents('/var/www/anilibria/root/sitemap.xml', $result);
 }
 
-function showNewSeason() {
+function checkIfVoted($rid) {
     global $db, $user;
-    $result = '';
-    $findSeason = 'весна';
-    $findYear = '2019';
-    $query = $db->prepare('SELECT `id`, `name`, `ename`, `genre`, `season`, `description` FROM `xrelease` WHERE `season` = :season AND `year` = :year');
-    $query->bindParam(':season', $findSeason);
-    $query->bindParam(':year', $findYear);
-    $query->execute();
-    while($row=$query->fetch()) {
-        $img = fileTime('/upload/release/270x390/'.$row['id'].'.jpg');
-        if(!$img){
-            $img = '/upload/release/270x390/default.jpg';
-        }
-
-        $tmp = getTemplate('season-vote');
-        $tmp = str_replace('{id}', $row['id'], $tmp);
-        $tmp = str_replace('{name}', $row['name'], $tmp);
-        $tmp = str_replace('{ename}', $row['ename'], $tmp);
-        $tmp = str_replace('{genres}', $row['genre'], $tmp);
-        $tmp = str_replace('{season}', $row['season'], $tmp);
-        $tmp = str_replace('{description}', $row['description'], $tmp);
-        $tmp = str_replace('{votes}', updateVoteInfo($row['id']), $tmp);
-        $tmp = str_replace('{img}', $img, $tmp);
-        $tmp = str_replace('{voteBtn}', checkIfVoted($user['id'],$row['id']), $tmp);
-        if($user) {
-            $favBtn = '<button data-upcoming-favorites class="{fav-state}" id="{rel-id}">{fav-text}</button>';
-            $favBtn = str_replace('{rel-id}', $row['id'], $favBtn);
-            if (isFavorite($user['id'], $row['id'])) {
-                $favBtn = str_replace('{fav-state}', 'fav-added', $favBtn);
-                $favBtn = str_replace('{fav-text}', 'УДАЛИТЬ ИЗ ИЗБРАННОГО', $favBtn);
-            } else {
-                $favBtn = str_replace('{fav-state}', 'fav-clear', $favBtn);
-                $favBtn = str_replace('{fav-text}', 'ДОБАВИТЬ В ИЗБРАННОЕ', $favBtn);
-            }
-
-            $tmp = str_replace('{favBtn}', $favBtn, $tmp);
-        } else {
-            $tmp = str_replace('{favBtn}', "", $tmp);
-        }
-        $result .= $tmp;
-    }
-    return $result;
-}
-
-function updateVoteInfo($rid) {
-    global $db;
-    $count = $db->prepare('SELECT COUNT(*) FROM `upcoming_votes` WHERE `urid` = :rid');
-    $count->bindParam(':rid', $rid);
-    $count->execute();
-    $result = $count->fetch();
-    return $result[0];
-}
-
-function checkIfVoted($uid, $rid) {
-    global $db;
-    $query = $db->prepare('SELECT * FROM `upcoming_votes` WHERE `user_id` = :usid AND `urid` = :rid');
-    $query->bindParam(':usid', $uid);
-    $query->bindParam(':rid', $rid);
-    $query->execute();
-    if($query->rowCount() > 0) {
-        $heartIco = '<img src="/img/other/heart-solid.svg" width="20px" height="20px" />';
-        $result = "<a data-upcoming-vote class=\"upcoming_season_like upcoming_wait\" id=\"$rid\" href=\"\">ЖДУ ЭТО АНИМЕ $heartIco</a>";
-    } else {
-        $heartIco = '<img src="/img/other/heart-regular.svg" width="20px" height="20px" />';
-        $result = "<a data-upcoming-vote class=\"upcoming_season_like\" id=\"$rid\" href=\"\">ЖДАТЬ ЭТО АНИМЕ $heartIco</a>";
-    }
-    return $result;
-}
-
-function changeVoteCount() {
-	global $db, $user;
-	if(!empty($_POST['rid']) && $user) {
-		$query = $db->prepare('SELECT * FROM `upcoming_votes` WHERE `user_id` = :usid AND `urid` = :rid');
-		$query->bindParam(':usid', $user['id']);
-		$query->bindParam(':rid', $_POST['rid']);
+    $svg = 'heart-regular.svg';
+	$img = "<img id='$rid' src='/img/other/{svg}' width='20px' height='20px'>";
+    if($user){
+		$query = $db->prepare('SELECT * FROM `favorites` WHERE `rid` = :rid AND `uid` = :uid');
+		$query->bindParam(':rid', $rid);
+		$query->bindParam(':uid', $user['id']);
 		$query->execute();
-		if($query->rowCount() > 0) {
-			while($row=$query->fetch()) {
-				$delete = $db->prepare('DELETE FROM `upcoming_votes` WHERE `user_id` = :uid AND `urid` = :rid');
-				$delete->bindParam(':uid', $user['id']);
-				$delete->bindParam(':rid', $_POST['rid']);
-				$delete->execute();
-				_message2('del');
-			}
-		} else {
-			$insert = $db->prepare('INSERT INTO `upcoming_votes` (`user_id`, `urid`) VALUES (:uid, :rid)');
-			$insert->bindParam(':uid', $user['id']);
-			$insert->bindParam(':rid', $_POST['rid']);
-			$insert->execute();
-            _message2('add');
+		if($query->rowCount() == 1) {
+			$svg = 'heart-solid.svg';
 		}
-	} else {
-		_message('unauthorized', 'error');
 	}
+	$img = str_replace('{svg}', $svg, $img);
+	return "<a href='' data-release-favorites='$rid' class='upcoming_season_like'>ЖДАТЬ ЭТО АНИМЕ $img</a>";
+}
+
+function showNewSeason() {
+	global $db, $user, $var;  $result = '';
+	$season = ['winter' => 'зима', 'spring' => 'весна', 'summer' => 'лето', 'autumn' => 'осень'];
+	if(empty($_GET['year']) || !ctype_digit($_GET['year']) || empty($_GET['season']) || !array_key_exists($_GET['season'], $season)){
+		return release404();
+	}
+	$findSeason = $season[$_GET['season']];
+	$findYear = $_GET['year'];
+	$query = $db->prepare('SELECT `id`, `name`, `ename`, `genre`, `season`, `description`, `rating`, `code` FROM `xrelease` WHERE `season` = :season AND `year` = :year ORDER BY `rating` DESC');
+	$query->bindParam(':season', $findSeason);
+	$query->bindParam(':year', $findYear);
+	$query->execute();
+	if($query->rowCount() == 0){
+		return release404();
+	}
+	lowerMove();
+	while($row=$query->fetch()) {
+		$img = fileTime('/upload/release/270x390/'.$row['id'].'.jpg');
+		if(!$img){
+			$img = '/upload/release/270x390/default.jpg';
+		}
+		$tmp = getTemplate('season-vote');
+		$tmp = str_replace('{id}', $row['id'], $tmp);
+		$tmp = str_replace('{name}', $row['name'], $tmp);
+		$tmp = str_replace('{ename}', $row['ename'], $tmp);
+		$tmp = str_replace('{genres}', $row['genre'], $tmp);
+		$tmp = str_replace('{season}', $row['season'], $tmp);
+		$tmp = str_replace('{description}', $row['description'], $tmp);
+		$tmp = str_replace('{votes}', $row['rating'], $tmp);
+		$tmp = str_replace('{img}', $img, $tmp);
+		$tmp = str_replace('{code}', $row['code'], $tmp);
+		$tmp = str_replace('{voteBtn}', checkIfVoted($row['id']), $tmp);
+		$result .= $tmp;
+	}
+	$var['title'] = "Новый сезон $findYear $findSeason";
+	return "<div class='news-block'><div id='upcoming_page_heading'><h2>Анонс аниме-$findSeason $findYear года</h2><p>Внимание! Голосовать могут только авторизованные пользователи.</p></div><div>$result</div><div class='clear'></div><div style='margin-top:10px;'></div></div>";
 }

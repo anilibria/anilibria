@@ -3,7 +3,7 @@
 function sessionHandler(){
 	// http://php.net/manual/en/function.session-id.php
 	// Warning: session_start(): The session id is too long or contains illegal characters, valid characters are a-z, A-Z, 0-9 and '-,'
-	if(isset($_COOKIE['PHPSESSID']) && !preg_match('/^[-,a-zA-Z0-9]{64}$/', $_COOKIE['PHPSESSID'])){
+	if(isset($_COOKIE['PHPSESSID']) && !preg_match('/^[-,a-zA-Z0-9]{22,64}$/', $_COOKIE['PHPSESSID'])){
 		setcookie('PHPSESSID', '', time() - 86400, '/', $_SERVER['SERVER_NAME'], true, true);
 		unset($_COOKIE['PHPSESSID']);
 		return;

@@ -342,7 +342,7 @@ function apiList(){
         global $db;
 		$result = [];
 		
-		$pagination = preparePagination($count);
+		$pagination = preparePagination();
         $startIndex = $pagination['startIndex'];
         $perPage = $pagination['perPage'];
 		
@@ -485,6 +485,13 @@ function apiList(){
 		return $result;
 	}
 	
+	function apiGetRandomRelease() {
+		$randomCode = randomRelease();
+		return [
+			'code' => $randomCode
+		];
+	}
+	
 	function proceedBridge($funcSrc, $funcDst){
 		register_shutdown_function(function() use ($funcSrc, $funcDst) {
 			// Получаем то, что было выведено во время работы $funcSrc
@@ -546,6 +553,10 @@ function apiList(){
                 throw new ApiException("No id or code for release", 400);
             }
         break;
+			
+		case 'random_release':
+			return apiGetRandomRelease();
+		break;
             
         case 'list':
             return apiGetReleases($info, $torrent);
