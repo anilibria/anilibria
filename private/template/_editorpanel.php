@@ -2,7 +2,7 @@
 	<div style="display:table-cell; width:33%; text-align:left;">
 		<a class="btn btn-xs btn-info" href="/pages/new.php">Новый релиз</a>
 	</div>
-	<div style="display:table-cell; width:34%; text-align:center;">Панель редактора: <?=$arrData['user']['login']?></div>
+	<div style="display:table-cell; width:34%; text-align:center;">Панель редактора: <?php echo htmlspecialchars($arrData['user']['login']); ?></div>
 	<div style="display:table-cell; width:33%; text-align:right;">
 		<?php if(($arrData['user'] ? $arrData['user']['access'] : 0) >= CONF_BUGREPORT_EDITOR_ACCESS){ ?>
 			<?php

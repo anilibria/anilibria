@@ -20,14 +20,14 @@ $page = (isset($_GET['page']) && $_GET['page'] > 1) ? (int)$_GET['page'] : 1;
 if(isset($_GET['release']) && $_GET['release'] >= 1){
 	$release_id = (int)$_GET['release'];
 	$state = (isset($_GET['state']) && $_GET['state'] === 'close') ? 'close' : 'open';
-	$bugs = getBugreports($release_id, $state, $page);
+	list($bugs, $numPages) = getBugreports($release_id, $state, $page);
 	$release_data = getReleaseBugsCounts($release_id);
 	$var['title'] = 'Ошибки релиза &quot;' . $release_data['name'] . '&quot;' . ($page > 1 ? ' - страница ' . $page : '');
-	$content = getTemplate('bugreport-release.php', [ 'bugs'=>$bugs[0], 'curPage'=>$page, 'pages'=>$bugs[1], 'release'=>$release_data, 'state'=>$state ]);
+	$content = getTemplate('bugreport-release.php', [ 'bugs'=>$bugs, 'curPage'=>$page, 'pages'=>$numPages, 'release'=>$release_data, 'state'=>$state ]);
 }else{
-	$bugs = getBugreportsReleases($page);
+	list($bugs, $numPages) = getBugreportsReleases($page);
 	$var['title'] = 'Список релизов с ошибками' . ($page > 1 ? ' - страница ' . $page : '');
-	$content = getTemplate('bugreport-index.php', [ 'releases'=>$bugs[0], 'curPage'=>$page, 'pages'=>$bugs[1], 'header'=>$var['title'] ]);
+	$content = getTemplate('bugreport-index.php', [ 'releases'=>$bugs, 'curPage'=>$page, 'pages'=>$numPages, 'header'=>$var['title'] ]);
 }
 
 require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
