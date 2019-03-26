@@ -43,15 +43,12 @@ function half_string_hash($s){
 	return hash($conf['hash_algo'], substr($s, round(strlen($s)/2)));
 }
 
-function session_hash($login, $passwd, $access, $rand = '', $time = ''){
+function session_hash($login, $passwd, $access, $rand = ''){
 	global $conf, $var;
 	if(empty($rand)){
 		$rand = genRandStr(8);
 	}
-	if(empty($time)){
-		$time = $var['time']+60*60*24*10;
-	}
-	return [$rand.hash($conf['hash_algo'], $rand.$var['user_agent'].$time.$login.sha1(half_string_hash($passwd))), $time];
+	return [$rand.hash($conf['hash_algo'], $rand.$var['user_agent'].$login.sha1(half_string_hash($passwd))), $var['time']+60*60*24*30];
 }
 
 function _exit(){
@@ -92,12 +89,15 @@ function csrf_token(){
 
 function createSecret($params){
 	global $conf;
+	if(empty($_SESSION['secret'])){
+		return false;
+	}
 	return hash($conf['hash_algo'], $_SESSION['secret'].$params);
 }
 
 function checkSecret($hash, $params){
 	global $conf;
-	if($hash != hash($conf['hash_algo'], $_SESSION['secret'].$params)){
+	if(empty($_SESSION['secret']) || $hash != hash($conf['hash_algo'], $_SESSION['secret'].$params)){
 		return false; 
 	}
 	return true;	
@@ -175,6 +175,9 @@ function oAuthLogin(){
 	if(!$row){
 		$htime = $var['time']+60*60;
 		$hash = createSecret($id.$htime);
+		if(!$hash){
+			_message2('wrong', 'error');
+		}
 		die(header("Location: https://".$_SERVER['SERVER_NAME']."/pages/vk.php?id=$id&time=$htime&hash=$hash"));
 	}
 	if(!empty($row['2fa'])){
@@ -244,15 +247,6 @@ function startSession($row){
 	$query->bindParam(':info', $var['user_agent']);
 	$query->execute();
 	$sid = $db->lastInsertId();
-	$query = $db->prepare('SELECT `id` FROM `session` WHERE `uid` = :uid ORDER BY `time`');
-	$query->bindParam(':uid', $row['id']);
-	$query->execute();
-	if($query->rowCount() > 50){
-		$close = $query->fetch();
-		$query = $db->prepare('DELETE FROM `session` WHERE `id` = :id');
-		$query->bindParam(':id', $close['id']);
-		$query->execute();
-	}
 	$_SESSION['sess'] = $hash[0];
 	$query = $db->prepare('UPDATE `users` SET `last_activity` = :time WHERE `id` = :id');
 	$query->bindParam(':time', $var['time']);
@@ -386,10 +380,11 @@ function registration(){
 		_message('registered', 'error');
 	}
 	$passwd = createPasswd($_POST['passwd']);
-	$query = $db->prepare('INSERT INTO `users` (`login`, `mail`, `passwd`, `register_date`) VALUES (:login, :mail, :passwd, unix_timestamp(now()))');
+	$query = $db->prepare('INSERT INTO `users` (`login`, `mail`, `passwd`, `register_date`) VALUES (:login, :mail, :passwd, :time)');
 	$query->bindValue(':login', $_POST['login']);
 	$query->bindParam(':mail', $_POST['mail']);
 	$query->bindParam(':passwd', $passwd['1']);
+	$query->bindParam(':time', $var['time']);
 	$query->execute();
 	if(!empty($_POST['vk'])){
 		$id = $db->lastInsertId();
@@ -408,9 +403,16 @@ function registration(){
 
 function auth(){
 	global $conf, $db, $var, $user;
+	if(random_int(1, 1000) == 1){
+		$tmp = time();
+		$query = $db->prepare('DELETE FROM `session` WHERE `time` < :time');
+		$query->bindParam(':time', $tmp);
+		$query->execute();
+	}	
 	if(!empty($_SESSION['sess'])){
-		$query = $db->prepare('SELECT `id`, `uid`, `hash`, `time` FROM `session` WHERE `hash` = :hash AND `time` > unix_timestamp(now())');
+		$query = $db->prepare('SELECT `id`, `uid`, `hash` FROM `session` WHERE `hash` = :hash AND `time` > :time');
 		$query->bindParam(':hash', $_SESSION['sess']);
+		$query->bindParam(':time', $var['time']);
 		$query->execute();
 		if($query->rowCount() != 1){
 			_exit();
@@ -425,18 +427,16 @@ function auth(){
 			return;
 		}
 		$row = $query->fetch();
-		if($_SESSION['sess'] != session_hash($row['login'], $row['passwd'], $row['access'], substr($session['hash'], 0, 8), $session['time'])[0]){
+		if($_SESSION['sess'] != session_hash($row['login'], $row['passwd'], $row['access'], substr($session['hash'], 0, 8))['0']){	
 			_exit();
 			return;
 		}
-		if($var['time'] > $session['time']){			
-			$hash = session_hash($row['login'], $row['passwd'], $row['access']);
-			$query = $db->prepare('UPDATE `session` set `hash` = :hash, `time` = :time WHERE `id` = :id');
-			$query->bindParam(':hash', $hash[0]);
-			$query->bindParam(':time', $hash[1]);
+		if(random_int(1, 10) == 1){
+			$tmp = $var['time']+60*60*24*30;
+			$query = $db->prepare('UPDATE `session` set `time` = :time WHERE `id` = :id');
+			$query->bindParam(':time', $tmp);
 			$query->bindParam(':id', $session['id']);
 			$query->execute();
-			$_SESSION['sess'] = $hash[0];
 		}
 		$user = [	'id' => $row['id'], 
 					'login' => $row['login'], 
@@ -639,9 +639,10 @@ function torrentExist($id){
 }
 
 function torrentAdd($hash, $rid, $json, $completed = 0){
-	global $db;
-	$query = $db->prepare('INSERT INTO `xbt_files` (`info_hash`, `mtime`, `ctime`, `flags`, `completed`, `rid`, `info`) VALUES( :hash , UNIX_TIMESTAMP(), UNIX_TIMESTAMP(), 0, :completed, :rid, :info)');
+	global $db, $var;
+	$query = $db->prepare('INSERT INTO `xbt_files` (`info_hash`, `mtime`, `ctime`, `flags`, `completed`, `rid`, `info`) VALUES( :hash , :time, :time, 0, :completed, :rid, :info)');
 	$query->bindParam(':hash', $hash);
+	$query->bindParam(':time', $var['time']);
 	$query->bindParam(':rid', $rid);
 	$query->bindParam(':completed', $completed);
 	$query->bindParam(':info', $json);
@@ -1122,52 +1123,64 @@ function isBlock($str){
 }
 
 function adsUrl(){
-	global $var, $cache; $host = []; $min = '10';
-	if(!checkADS() || geoip_country_code_by_name($var['ip']) != 'RU'){
-		return 'player.js';
+	global $cache; $arr = []; $min = '10';
+	$arr['mix'] = ['id' => 'vast2427', 'percent' => $min];
+	$arr['rey'] = ['id' => 'vast2585', 'percent' => $min];
+	function prepareAdsUrl($arr, $win = ''){
+		foreach($arr as $key => $val){
+			if($win == $key){
+				continue;
+			}
+			$result[] = $val['id'];
+		}
+		return implode(",", $result);
 	}
-	$arr = [
-		'player.mix.js' => $min,
-		'player.zet.js' => $min,
-		'player.reyden.js' => $min,
-	];
-	$tmp = $cache->get('playerStatAds');
-	if($tmp !== false){
-		$arr = [];
-		$tmp = json_decode($tmp, true);
-		foreach($tmp as $key => $val){
-			if($val < $min){
-				$arr["$key"] = $min;
-			}else{
-				$arr["$key"] = $val['percent'];
+	function adsRandom($cache, $arr, $min){
+		$host = [];
+		$tmp = $cache->get('playerStatAds');
+		if($tmp !== false){
+			$arr = json_decode($tmp, true);
+			if($arr['mix']['rate'] >= 60){
+				return 'mix';
 			}
 		}
+		foreach($arr as $key => $val){
+			if($val['percent'] < $min){
+				$val['percent'] = $min;
+			}
+			$host = array_merge($host, array_fill(0, $val['percent'], $key));
+		}
+		shuffle($host);
+		return $host[random_int(0, count($host) - 1)];
 	}
-	foreach($arr as $key => $val){
-		$host = array_merge($host, array_fill(0, $val, $key));
+	if(!checkADS()){
+		return prepareAdsUrl($arr);
 	}
-	shuffle($host);
-	return $host[random_int(0, count($host) - 1)];
+	return prepareAdsUrl($arr, adsRandom($cache, $arr, $min));
+}
+
+function release404(){
+	global $var;
+	$var['title'] = '404';
+	header('HTTP/1.0 404 Not Found');
+	return str_replace('{error}', '<center><img src="/img/404.png"></center>', getTemplate('error'));
+}
+
+function lowerMove(){
+	if(preg_match('/[[:upper:]]/', $_SERVER['REQUEST_URI'])){
+		header('HTTP/1.1 301 Moved Permanently');
+		header('Location: ' . mb_strtolower($_SERVER['REQUEST_URI']));
+		die;
+	}
 }
 
 function showRelease(){
 	global $db, $user, $var;
 	$status = ['0' => 'В работе', '1' => 'Завершен'];
-	function release404(){
-		header('HTTP/1.0 404 Not Found');
-		return str_replace('{error}', '<center><img src="/img/404.png"></center>', getTemplate('error'));
-	}
-	function lowerMove(){
-		if(preg_match('/[[:upper:]]/', $_SERVER['REQUEST_URI'])){
-			header('HTTP/1.1 301 Moved Permanently');
-			header('Location: ' . mb_strtolower($_SERVER['REQUEST_URI']));
-			die;
-		}
-	}
 	if(empty($_GET['code'])){
 		return release404();
 	}
-	$query = $db->prepare('SELECT `id`, `name`, `ename`, `aname`, `moonplayer`, `genre`, `voice`, `year`, `type`, `translator`, `editing`, `decor`, `timing`, `description`, `announce`, `status`, `day`, `code`, `block` FROM `xrelease` WHERE `code` = :code');
+	$query = $db->prepare('SELECT `id`, `name`, `ename`, `aname`, `moonplayer`, `genre`, `voice`, `year`, `season`, `type`, `translator`, `editing`, `decor`, `timing`, `description`, `announce`, `status`, `day`, `code`, `block` FROM `xrelease` WHERE `code` = :code');
 	$query->bindParam(':code', $_GET['code']);
 	$query->execute();
 	if($query->rowCount() != 1){
@@ -1231,13 +1244,20 @@ function showRelease(){
 	}else{
 		$release['other'] = '';
 	}
-	
+	if(!empty($release['year']) && !empty($release['season'])){
+		$xtmp = implode(' ', [$release['year'], $release['season']]);
+		if(in_array($release['season'], $var['season'])){
+			$tmpLink = $release['year'].array_search($release['season'], $var['season']);		
+			$xtmp = "<a href='/season/$tmpLink.html' style='color: #333;'>$xtmp</a>";
+		}
+		$release['year'] = $xtmp;
+	}
 	$page = str_replace('{chosen-genre}', $str, $page);
 	$page = str_replace('{genre}', $release['genre'], $page);
 	$page = str_replace('{chosen}', getGenreList(), $page);
 	$page = str_replace('{releaseid}', $release['id'], $page);
 	$page = str_replace('{voice}', $release['voice'], $page);
-	$page = str_replace('{year}', "{$release['year']}", $page);
+	$page = str_replace('{year}', $release['year'], $page);
 	$page = str_replace('{type}', $release['type'], $page);
 	$page = str_replace('{other}', $release['other'], $page);
 	
@@ -1308,7 +1328,7 @@ function showRelease(){
 		while($row = $query->fetch()){
 			$torrent .= getTemplate('torrent');
 			$tmp = json_decode($row['info'], true);
-			$torrent = str_replace('{ctime}', date('d.m.Y H:m', $row['ctime']), $torrent);
+			$torrent = str_replace('{ctime}', date('d.m.Y H:i', $row['ctime']), $torrent);
 			$torrent = str_replace('{seeders}', $row['seeders'], $torrent);
 			$torrent = str_replace('{leechers}', $row['leechers'], $torrent);
 			$torrent = str_replace('{completed}', $row['completed'], $torrent);
@@ -1394,7 +1414,7 @@ function xrelease(){
 	if(empty($_POST['data'])){
 		_message('empty', 'error');
 	}
-	$arr = ['name', 'ename', 'aname', 'year', 'type', 'genre', 'voice', 'translator', 'editing', 'decor', 'timing', 'announce', 'status', 'moonplayer', 'description', 'day', 'block'];
+	$arr = ['name', 'ename', 'aname', 'year', 'season', 'type', 'genre', 'voice', 'translator', 'editing', 'decor', 'timing', 'announce', 'status', 'moonplayer', 'description', 'day', 'block'];
 	$post = json_decode($_POST['data'], true);
 	foreach($arr as $key){
 		if(array_key_exists($key, $post)){
@@ -1467,8 +1487,9 @@ function auth_history(){
 	$query->execute();
 	while($row = $query->fetch()){
 		$status = false;
-		$tmp = $db->prepare('SELECT `id` FROM `session` WHERE `id` = :id AND `time` > UNIX_TIMESTAMP()');
+		$tmp = $db->prepare('SELECT `id` FROM `session` WHERE `id` = :id AND `time` > :time');
 		$tmp->bindParam(':id', $row['sid']);
+		$tmp->bindParam(':time', $var['time']);
 		$tmp->execute();
 		if($tmp->rowCount() == 1){
 			$status = true;
@@ -1532,7 +1553,8 @@ function footerJS(){
 			}
 			$tmp = getReleaseVideo($var['release']['id']);
 			if(!empty($tmp) && !$var['release']['block']){
-				$tmpPlayer = str_replace('{playerjs}', fileTime('/js/'.adsUrl()), getTemplate('playerjs'));
+				$tmpPlayer = str_replace('{playerjs}', fileTime('/js/player.js'), getTemplate('playerjs'));	
+				$tmpPlayer = str_replace('{deny}', adsUrl(), $tmpPlayer);
 				$result .= str_replace('{playlist}', $tmp, $tmpPlayer);
 			}
 			unset($tmp);
@@ -1544,12 +1566,18 @@ function footerJS(){
 			}
 			if(!empty($xname)){
 				$result .= wsInfo($xname);
+				
 			}
-			$result .= str_replace('{page}', '', $vk);
+			if(!empty($var['release']['id'])){
+				$result .= str_replace('{page}', '', $vk);
+			}else{
+				$result .= str_replace('{page}', 'pageUrl: \'/pages/error/404.php\',', $vk);
+			}
 		break;
 		case 'app':
 		case 'request':
 		case 'links':
+		case 'new-season':
 			$result .= str_replace('{page}', '', $vk);
 		break;
 		case 'donate':
@@ -1567,6 +1595,8 @@ function footerJS(){
 				  }, 75);
 				</script>
 			';
+			$result .= '<script src="'.fileTime('/js/player.js').'" type="text/javascript"></script>';
+			$result .= '<script>var player = new Playerjs({ id:"anilibriaPlayer", "title":"&nbsp;", "file":"'.fileTime('/upload/donate/1.mp4').'", poster:"'.fileTime('/upload/donate/1.jpg').'", preroll_deny:"vast2427,vast2585"});</script>';
 		break;
 		case '404':
 		case '403':
@@ -1878,7 +1908,7 @@ function showEditTorrentTable(){
 	$query->bindParam(':rid', $var['release']['id']);
 	$query->execute();
 	while($row = $query->fetch()){
-		$date = date('d.m.Y', $row['ctime']);
+		$date = date('d.m.Y H:i', $row['ctime']);
 		$info = json_decode($row['info'], true);
 		$tmp = getTemplate('edit_torrent');
 		$tmp = str_replace('{id}', $row['fid'], $tmp);
@@ -2013,6 +2043,9 @@ function fileTime($file){
 }
 
 function sphinxPrepare($x){
+	$x = explode(',', $x);
+	$x = array_filter($x);
+	$x = implode(',', $x);
 	return preg_replace('/[^\w, ]+/u', '', $x);
 }
 
@@ -2170,28 +2203,42 @@ function showCatalog(){
 		return ['data' => $data, 'total' => $total];
 	}
 	function bSearch($sphinx, $page, $sort){
-		if(!empty($_POST['search'])){
-			$data = json_decode($_POST['search'], true);			
-			if(!isset($data['year']) || !isset($data['genre'])){
-				return false;
+		if(empty($_POST['search'])){
+			return false;
+		}
+		$search = []; $s = []; $arr = ['genre', 'year', 'season'];
+		$data = json_decode($_POST['search'], true);
+		foreach($arr as $val){
+			if(empty($data["$val"])){
+				continue;
 			}
-			$search[] = str_replace(',', '|', sphinxPrepare($data['year']));
-			$search[] = sphinxPrepare($data['genre']);			
-			$search = trim(implode(",", $search), ',');
-			if(!empty($search)){				
-				$query = $sphinx->prepare('SELECT count(*) as total FROM anilibria WHERE MATCH(:search) AND '.checkFinish());
-				$query->bindValue(':search', "@(genre,year) ($search)");
-				$query->execute();
-				$total =  $query->fetch()['total'];
-				
-				$query = $sphinx->prepare("SELECT `id` FROM anilibria WHERE MATCH(:search) AND ".checkFinish()." ORDER BY `{$sort}` DESC LIMIT {$page}, 12 OPTION max_matches=2012");
-				$query->bindValue(':search', "@(genre,year) ($search)");
-				$query->execute();
-				$data = $query->fetchAll(PDO::FETCH_ASSOC);
-				return ['data' => $data, 'total' => $total];
+			$tmp = sphinxPrepare($data["$val"]);
+			if($val == 'year' || $val == 'season'){
+				$tmp = str_replace(',', '|', sphinxPrepare($tmp));
+			}
+			if(!empty($tmp)){
+				$search["$val"] = $tmp;
 			}
 		}
-		return false;
+		foreach($search as $key => $val){
+			$s[] = "@{$key}({$val})";
+		}	
+
+		$s = implode(' ', $s);
+		if(empty($s)){
+			return false;
+		}
+		
+		$query = $sphinx->prepare('SELECT count(*) as total FROM anilibria WHERE MATCH(:search) AND '.checkFinish());
+		$query->bindValue(':search', "$s");
+		$query->execute();
+		$total =  $query->fetch()['total'];
+			
+		$query = $sphinx->prepare("SELECT `id` FROM anilibria WHERE MATCH(:search) AND ".checkFinish()." ORDER BY `{$sort}` DESC LIMIT {$page}, 12 OPTION max_matches=2012");
+		$query->bindValue(':search', "$s");
+		$query->execute();
+		$data = $query->fetchAll(PDO::FETCH_ASSOC);
+		return ['data' => $data, 'total' => $total];
 	}
 	
 	function cSearch($db, $user, $page){
@@ -2731,14 +2778,6 @@ function updateGenreRating(){
 	}
 }
 
-function randCheck($x){
-	$rand = random_int(1, 100);
-	if($rand > $x){
-		return false;
-	}
-	return true;
-}
-
 function showSitemap(){
 	global $db; $release = '';
 	$query = $db->query('SELECT `code` FROM `xrelease` WHERE `status` != 3');
@@ -2747,4 +2786,63 @@ function showSitemap(){
 	}
 	$result = str_replace('{release}', rtrim($release), getTemplate('sitemap'));
 	file_put_contents('/var/www/anilibria/root/sitemap.xml', $result);
+}
+
+function checkIfVoted($rid) {
+    global $db, $user;
+    $svg = 'heart-regular.svg';
+	$img = "<img id='$rid' src='/img/other/{svg}' width='20px' height='20px'>";
+    if($user){
+		$query = $db->prepare('SELECT * FROM `favorites` WHERE `rid` = :rid AND `uid` = :uid');
+		$query->bindParam(':rid', $rid);
+		$query->bindParam(':uid', $user['id']);
+		$query->execute();
+		if($query->rowCount() == 1) {
+			$svg = 'heart-solid.svg';
+		}
+	}
+	$img = str_replace('{svg}', $svg, $img);
+	return "<a href='' data-release-favorites='$rid' class='upcoming_season_like'>БУДУ СМОТРЕТЬ $img</a>";
+}
+
+function showNewSeason() {
+	global $db, $user, $var;  $result = ''; $order = ''; $video = '';
+	if(empty($_GET['year']) || !ctype_digit($_GET['year']) || empty($_GET['season']) || !array_key_exists($_GET['season'], $var['season'])){
+		return release404();
+	}
+	$season = $var['season'][$_GET['season']];
+	$year = $_GET['year'];
+	$query = $db->prepare('SELECT `id`, `name`, `ename`, `genre`, `season`, `description`, `rating`, `code` FROM `xrelease` WHERE `year` = :year AND `season` = :season ORDER BY `rating` DESC');
+	$query->bindParam(':year', $year);
+	$query->bindParam(':season', $season);
+	$query->execute();
+	if($query->rowCount() == 0){
+		return release404();
+	}
+	lowerMove();
+	while($row=$query->fetch()) {
+		$img = fileTime('/upload/release/270x390/'.$row['id'].'.jpg');
+		if(!$img){
+			$img = '/upload/release/270x390/default.jpg';
+		}
+		$tmp = getTemplate('season-vote');
+		$tmp = str_replace('{id}', $row['id'], $tmp);
+		$tmp = str_replace('{name}', $row['name'], $tmp);
+		$tmp = str_replace('{ename}', $row['ename'], $tmp);
+		$tmp = str_replace('{genres}', $row['genre'], $tmp);
+		$tmp = str_replace('{season}', $row['season'], $tmp);
+		$tmp = str_replace('{description}', $row['description'], $tmp);
+		$tmp = str_replace('{votes}', $row['rating'], $tmp);
+		$tmp = str_replace('{img}', $img, $tmp);
+		$tmp = str_replace('{code}', $row['code'], $tmp);
+		$tmp = str_replace('{voteBtn}', checkIfVoted($row['id']), $tmp);
+		$result .= $tmp;
+	}
+	$tmpl = '<div style="border-radius: 4px; overflow: hidden; z-index: 1; width: 832px; height: 468px; margin-top: 10px; margin-left: 4px;"><iframe width="832" height="468" src="https://www.youtube.com/embed/{vid}" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div><hr/>';
+	$key = $year.$_GET['season'];
+	if(array_key_exists($key, $var['youtube'])){
+		$video = str_replace('{vid}', $var['youtube']["$key"], $tmpl);
+	}
+	$var['title'] = "Аниме сезон $year $season";
+	return "<div class='news-block'>$video<div>$result</div><div class='clear'></div><div style='margin-top:10px;'></div></div>";
 }

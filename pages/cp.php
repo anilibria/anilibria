@@ -56,7 +56,7 @@ function tableSess($data){
 		if($data[$key][2]){
 			$status = '<font color="green">Active</a>';
 		}
-		$text .= "<tr><td>$i</td><td>{$data[$key][0]}</td><td>".geoip_country_name_by_name($data[$key][0])."</td><td>".date("Y-m-d h:s", $key)."</td><td>$status</td>
+		$text .= "<tr><td>$i</td><td>{$data[$key][0]}</td><td>".geoip_country_name_by_name($data[$key][0])."</td><td>".date("Y-m-d H:i", $key)."</td><td>$status</td>
 		<td><a href=\"#\" style=\"color: #383838;\" data-history-show-header=\"{$data[$key][1]}\"><span class=\"glyphicon glyphicon-edit\"></span></a>";
 		if($data[$key][2]){
 			$text .= "&nbsp;<a href=\"#\" style=\"color: #383838;\" data-session-id=\"{$data[$key][3]}\" data-session-td=\"$td\"><span class=\"glyphicon glyphicon-remove\"></span>";

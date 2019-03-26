@@ -5,74 +5,56 @@ if(!empty($_SESSION['csrf'])){
 	$csrf_token = '';
 }
 
-function randomClassName(){
-	// https://forums.lanik.us/viewtopic.php?f=102&t=34618
-	global $cache, $var;
-	function imgBase64($name){
-		$img = $_SERVER["DOCUMENT_ROOT"]."/img/ads/$name.jpg";
-		if(!file_exists($img)){
-			return false;
-		}
-		$type = pathinfo($img, PATHINFO_EXTENSION);
-		return 'data:image/'.$type.';base64,'.base64_encode(file_get_contents($img));
-	}
-	$left = 0;
+function headerAds(){
+	global $cache, $var; $result = []; $left = 0;
 	$img = '/img/29.png';
-	
+	$result['ads'] = false;
+
 	$data[] = ['img' => 'ragnarok', 'left' => '0px', 'url' => '/ro'];
 	$data[] = ['img' => 'bs', 'left' => '-195px', 'url' => '/bs'];
-	$data[] = ['img' => 'storm', 'left' => '0px', 'url' => '/storm'];
-	
-	$css = getTemplate('header');
-	$arr = ['header', 'main', 'content', 'side', 'footer', 'clear', 'link', 'headercontent'];
-	$result = [];
-	$result['ads'] = false;
-	foreach($arr as $val){
-		$name = 'a'.mb_strtolower(genRandStr(rand(4, 8), 1));
-		$css = str_replace('{'.$val.'}', $name, $css);
-		$result["$val"] = $name;
-	}
+	//$data[] = ['img' => 'storm', 'left' => '0px', 'url' => '/storm'];
+	//$data[] = ['img' => 'cro', 'left' => '0px', 'url' => '/cro'];
+	$data[] = ['img' => 'rise', 'left' => '0px', 'url' => '/rise'];
+
 	if(checkADS()){
-		/*
-		$cday = date('j', $var['time']);
-		$key = $cache->get('adsCurrent');
-		$day = $cache->get('adsCurrentDay');
-		
-		if($key === false || $day === false || $day != $cday){
-			if($key === false){
-				$key = 0;
-			}else{
-				$key++;
-			}
-			if($key > count($data)-1){
-				$key = 0;
-			}
-			//$key = random_int(0, count($data)-1);
-			$cache->set('adsCurrent', $key, 172800);
-			$cache->set('adsCurrentDay', $cday, 172800);
-		}
-		*/
-		$key = 2;
+		//$cday = date('j', $var['time']);
+		//$key = $cache->get('adsCurrent');
+		//$day = $cache->get('adsCurrentDay');
+		//if($key === false || $day === false || $day != $cday){
+		//	if($key === false){
+		//		$key = 0;
+		//	}else{
+		//		$key++;
+		//	}
+		//	if($key > count($data)-1){
+		//		$key = 0;
+		//	}
+		//	//$key = random_int(0, count($data)-1);
+		//	$cache->set('adsCurrent', $key, 172800);
+		//	$cache->set('adsCurrentDay', $cday, 172800);
+		//}
+
+		$key = 0;
 		$ads = $data["$key"];
-		$test = $cache->get('adsCurrentID'.$key);
-		if($test === false){
-			$test = imgBase64($ads['img']);
-			$cache->set('adsCurrentID'.$key, $test, 600);
-		}
-		if($test){
-			$img = $test;
-			$left = $ads['left'];
-			$result['url'] = $ads['url'];
-			$result['ads'] = true;
-		}
+		
+		$img = '/img/other/a/'.$ads['img'].'.jpg';
+		$left = $ads['left'];
+		$result['url'] = $ads['url'];
+		$result['ads'] = true;
+		
 	}
+	
+	$left = '350px;'; 
+	$img = '/img/31.jpg';
+	$result['url'] = '/season/2019spring.html';
+	$css = getTemplate('header');
 	$css = str_replace('{img}', $img, $css);
 	$css = str_replace('{left}', $left, $css);
 	$result['css'] = $css;
 	return $result;
 }
 
-$xcss = randomClassName();
+$xcss = headerAds();
 ?>
 
 <!DOCTYPE html>
@@ -97,20 +79,27 @@ $xcss = randomClassName();
 	</head>
 	<body>
 		<input type="hidden" id="csrf_token" value='<?php echo $csrf_token; ?>'>
+		<!-- 
+			https://github.com/AdguardTeam/AdguardFilters/pull/30164
+			https://forums.lanik.us/viewtopic.php?f=102&t=34618
+		-->
 		<div id="headercontent"></div>
-		<div class="<?php echo $xcss['link']; ?>">
+		<div class="link">
 		<?php
-			if($xcss['ads']){
+			//if($xcss['ads']){
 				echo '<a href="'.$xcss['url'].'"></a>';
-			}
+			//}
 		?>
 		</div>
-		<div class="<?php echo $xcss['header']; ?>">
-			<div class="<?php echo $xcss['headercontent']; ?>">
-			</div>
+		<div class="header">
+			<?php
+				//if($xcss['ads']){
+					echo "<div class='headercontent'></div>";
+				//}
+			?>
 		</div>
-		<div class="<?php echo $xcss['main']; ?>">
-			<div class="<?php echo $xcss['content']; ?>">
+		<div class="main">
+			<div class="content">
 				<div class="contentmenu">
 					<ul class="main-navigation">
 						<li><a id="activelink0" href="/">ГЛАВНАЯ</a></li>

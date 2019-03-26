@@ -149,10 +149,11 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
 			<li><span style="color: #33cccc;">Muvik</span> - дизайнер</li>
 			<li><span style="color: #33cccc;">Toppi</span> - дизайнер</li>
 			<li><span style="color: #000080;">Furry Lynx</span> - сидер</li>
-			<li><span style="color: #000080;">New On</span> - сидер</li>
+			<li><span style="color: #000080;">New ON</span> - сидер</li>
 			<li><span style="color: #000080;">FLASHIx</span> - сидер</li>
 			<li><span style="color: #000080;">Wan</span> - сидер</li>
-			<li><span style="color: #000080;">Rossik666</span> - сидер</li>
+			<li><span style="color: #000080;">LightKay</span> - сидер</li>
+			<li><span style="color: #000080;">SkyMasteer</span> - сидер</li>
 		</ul>
 		<div class="day">
 				<div class="teamleft">&#8548; лига</div> 
@@ -174,9 +175,11 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
 				<div class="teamright">АКАДЕМИЯ</div>
 		</div>
 		<ul>
-			<li><span style="color: #339966;">Ashvoice</span>&nbsp;- войсер стажёр</li>
-			<li><span style="color: #339966;">SlivciS</span>&nbsp;- войсер стажёр</li>
-			<li><span style="color: #339966;">Kiyoko Koheiri</span>&nbsp;- войсер стажёр</li> 
+			<li><span style="color: #339966;">Ashvoice</span> - войсер стажёр</li>
+			<li><span style="color: #339966;">SlivciS</span> - войсер стажёр</li>
+			<li><span style="color: #339966;">Kiyoko Koheiri</span> - войсер стажёр</li> 
+            <li><span style="color: #339966;">Andryoushka</span> - войсер стажёр</li> 
+			<li><span style="color: #339966;">D2kun</span> - войсер стажёр</li> 
 			<li><span style="color: #800000;">WaFee</span> - таймер стажёр</li>                                      
 			<li><span style="color: #f7941d;">Renko</span> - саббер стажёр</li>
 		</ul>

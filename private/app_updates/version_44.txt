@@ -1,0 +1,23 @@
+{
+  "update": {
+    "version_code": "44",
+    "version_name": "2.3.4",
+    "version_build": "0",
+    "build_date": "25 марта 2019 г.",
+    "links": [
+      {
+        "name": "AniLibria",
+        "url": "https://www.anilibria.tv/upload/app/AniLibria_v2.3.4.apk",
+        "type": "file"
+      }
+    ],
+    "important": [],
+    "added": [
+      "Фильтр \"сезон\" в поиске"
+    ],
+    "fixed": [],
+    "changed": [
+      "Повышена стабильность"
+    ]
+  }
+}

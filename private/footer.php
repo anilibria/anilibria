@@ -1,5 +1,5 @@
 			</div>
-			<div class="<?php echo $xcss['side']; ?>">
+			<div class="side">
 				<div class="asidehead" >
 					<div style="width: 260px; padding-top: 11px; margin: 0 auto;">
 						
@@ -31,7 +31,7 @@
 		</div>
 		
 		<div class="clear"></div>
-		<div class="<?php echo $xcss['footer']; ?>">
+		<div class="footer">
 			<div class="footer_left">
 				<div class="footer_left2">
 					<a href="http://www.animespirit.ru/" target="_blank" rel="nofollow"><img src="/img/button/1.jpg" alt=""></a>
@@ -61,6 +61,17 @@
 				</p>
 			</div>
 		</div>
+		
+		<div class="modal fade" id="authPlsModal" tabindex="-1" role="dialog" aria-hidden="true">
+			<div class="modal-dialog" style="width: 500px;">
+				<div class="modal-content">
+					<div class="modal-body">
+						<pre style="margin-top: 7px;"><center>Пожалуйста, <a href="https://www.anilibria.tv/pages/login.php">авторизуйтесь</a> на сайте.</center></pre>
+					</div>
+				</div>
+			</div>
+		</div>
+		
 		<script src="<?php echo fileTime('/js/jquery.min.js');?>"></script>	
 		<script src="<?php echo fileTime('/js/bootstrap.min.js');?>"></script>
 		<script src="<?php echo fileTime('/js/main.js');?>"></script>

@@ -12,7 +12,7 @@ if(!empty($_SERVER['HTTP_USER_AGENT'])){
 }
 $var['default_user_values'] = '{"name":"","age":"","sex":"","vk":"","telegram":"","steam":"","phone":"","skype":"","facebook":"","instagram":"","youtube":"","twitch":"","twitter":""}';
 
-$var['app_version'] = 42;
+$var['app_version'] = 45;
 
 $var['sex'] = [
 	'Не указано',
@@ -113,3 +113,18 @@ $var['error'] = [
 	'wrongRelease' => 'Неправильный релиз',
 	'exitTorrent' => 'Торрент уже добавлен',
 ];
+
+$var['season'] = ['winter' => 'зима', 'spring' => 'весна', 'summer' => 'лето', 'autumn' => 'осень'];
+
+$var['youtube']['2017winter'] = 'OXBO4h3l3rM';
+$var['youtube']['2017spring'] = '1c7WG8XpmYs';
+$var['youtube']['2017summer'] = 'wOcpVolqCs';
+$var['youtube']['2018autumn'] = 'Sv4u2-YdUXE';
+	
+$var['youtube']['2018winter'] = '3Ib5MsPkjPk';
+$var['youtube']['2018spring'] = 'GYOG_XUhWpw';
+$var['youtube']['2018summer'] = '7g0tp6tMoU0';
+$var['youtube']['2018autumn'] = 'eocPilzfxXE';
+	
+$var['youtube']['2019winter'] = 'PYh5yYkHZok';
+$var['youtube']['2019spring'] = '2MNMguWS7ss';

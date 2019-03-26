@@ -3,6 +3,9 @@
 function onlineUpdate(){
 	$sum = 0; 
 	$json = file_get_contents("https://static.anilibria.tv/stat/", false, stream_context_create(['http'=> [ 'timeout' => 5 ]]));
+	if($json === false){
+		return;
+	}
 	$arr = json_decode($json, true);
 	$data = [];
 	foreach($arr as $key => $val){

@@ -22,12 +22,46 @@ body {
 	font-size: 16px;
 }
 
-/*.main {
-	margin-top: 15px;
-}*/
-
 @-moz-document url-prefix() {
     body {font-size: 15px;}
+}
+
+.main {
+	margin-top: 10px;
+}
+.content {
+	width: 880px;
+	float: left;
+	background-color: #D3D3D3;
+}
+.side {
+	width: 280px;
+	min-height: 1580px;
+	float: right;
+	background-color: #383838;
+	border-radius: 4px;
+}
+.footer {
+	bottom: 0;
+	margin-top: 12px;
+	background-color: #383838;
+	width: 1175px;
+	height: 100px;
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+}
+.footer a {
+	color: #ddd;
+}
+
+.headercontent {
+	position: absolute;
+	top: 0;
+	width: 213px;
+	height: 92px;
+	background: url('/img/logo_new1.png');
+	background-repeat: no-repeat;
+	background-size: cover;
 }
 
 .content {

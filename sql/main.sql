@@ -1,10 +1,5 @@
--- phpMyAdmin SQL Dump
--- version 4.8.5
--- https://www.phpmyadmin.net/
---
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
-
 
 CREATE TABLE `favorites` (
   `id` int(11) NOT NULL,
@@ -20,7 +15,8 @@ CREATE TABLE `f_tmp` (
 
 CREATE TABLE `genre` (
   `id` int(11) NOT NULL,
-  `name` varchar(32) NOT NULL
+  `name` varchar(32) NOT NULL,
+  `rating` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `log_ip` (
@@ -111,6 +107,7 @@ CREATE TABLE `xrelease` (
   `search_status` varchar(16) NOT NULL,
   `moonplayer` varchar(128) NOT NULL,
   `description` text NOT NULL,
+  `season` varchar(255) DEFAULT NULL,
   `last` bigint(20) NOT NULL DEFAULT 0,
   `day` int(1) NOT NULL DEFAULT 1,
   `rating` int(11) NOT NULL DEFAULT 0,
@@ -129,6 +126,14 @@ CREATE TABLE `youtube` (
   `type` int(11) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `upcoming_votes` (
+  `urid` int(11) DEFAULT NULL,
+  `user_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+ALTER TABLE `upcoming_votes`
+  ADD KEY `urid` (`urid`);
 
 ALTER TABLE `favorites`
   ADD PRIMARY KEY (`id`),

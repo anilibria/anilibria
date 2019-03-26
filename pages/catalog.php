@@ -105,17 +105,27 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
 
 <div class="simpleFilter">
 	<div>
-		<div style="margin-bottom: 25px; width: 515px; float: left;">
-			<select id="catalogGenre" class="form-control chosen" data-placeholder="Выбрать жанры ..." name="tags[]" multiple style="">
+		<div style="margin-bottom: 25px; width: 390px; float: left;">
+			<select id="catalogGenre" class="form-control chosen" data-placeholder="Выбрать жанры" name="tags[]" multiple style="">
 				<?php echo getGenreList(); ?>
 			</select>
 		</div>
 
-		<div style="margin-bottom: 25px; margin-left: 10px; width: 305px; float: left;">
-			<select id="catalogYear" class="form-control chosen" data-placeholder="Выбрать год ..." name="tags[]" multiple style="">
+		<div style="margin-bottom: 25px; margin-left: 10px; width: 240px; float: left;">
+			<select id="catalogYear" class="form-control chosen" data-placeholder="Год" name="tags[]" multiple style="">
 				<?php echo catalogYear(); ?>
 			</select>
 		</div>
+		
+		<div style="margin-bottom: 25px; margin-left: 10px; width: 180px; float: left;">
+			<select id="catalogSeason" class="form-control chosen" data-placeholder="Сезон" name="tags[]" multiple style="">
+				<option value="зима">Зима</option>
+				<option value="весна">Весна</option>
+				<option value="лето">Лето</option>
+				<option value="осень">Осень</option>
+			</select>
+		</div>
+		
 	</div>
 	<div class="clear"></div>
 	<div>

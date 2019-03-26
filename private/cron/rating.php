@@ -1,5 +1,6 @@
 #!/usr/bin/php
 <?php
+$_SERVER['DOCUMENT_ROOT'] = '/var/www/anilibria/root';
 require('/var/www/anilibria/root/private/config.php');
 require('/var/www/anilibria/root/private/init/mysql.php');
 require('/var/www/anilibria/root/private/init/sphinx.php');

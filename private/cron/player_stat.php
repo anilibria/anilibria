@@ -4,6 +4,19 @@
 require('/var/www/anilibria/root/private/config.php');
 require('/var/www/anilibria/root/private/init/memcache.php');
 
+function sendApi($url, $data, $cookie = ''){
+	$options = [
+		'http' => [
+			'header'  => "Content-type: application/x-www-form-urlencoded\r\n".
+			"Cookie: awuegfusvfkjasdf=$cookie\r\n",
+			'method'  => 'POST',
+			'content' => http_build_query($data)
+		]
+	];
+	$context  = stream_context_create($options);
+	return [file_get_contents($url, false, $context), $http_response_header];
+}
+
 function authPlayerJS(){
 	global $cache, $conf;
 	$result = $cache->get('playerAuth');
@@ -28,12 +41,15 @@ function simpleSend($url, $data){
 }
 
 function getStatAds(){
-	global $cache;
-	$ads = [ 
-		'player.mix.js' => ['id' => 1288, 'price' => 100 ],
-		'player.zet.js' => ['id' => 1279, 'price' => 130 ],
-		'player.reyden.js' => ['id' => 1446, 'price' => 70 ]
-	];
+	global $cache; $ads = [];
+	
+	function updatePlayerStat($cache, $arr){
+		$cache->set('playerStat', json_encode($arr), 86400);
+	}
+	
+	$ads['mix'] = ['id' => 1288, 'price' => 100 ];
+	$ads['rey'] = ['id' => 1446, 'price' => 75 ];
+	
 	$result = []; $result['all'] = 0;
 	foreach($ads as $key => $val){
 		$stat = simpleSend(
@@ -44,21 +60,64 @@ function getStatAds(){
 		list($hit, $mis) = explode('::', $numbers);
 		$total = $hit+$mis;
 		$result["$key"] = [
-			'weight' => round($hit/$total*$val['price']),
+			'weight' => round($hit*100/$total*$val['price']),
 			'hit' => $hit,
 			'mis' => $mis,
 			'total' => $total
 		];
 		$result['all'] += $result["$key"]['weight'];
 	}
+	
+	$result['time'] = time()+60*60;
+	$old = $cache->get('playerStat');
+	if($old === false){
+		updatePlayerStat($cache, $result);
+	}else{
+		$old = json_decode($old, true);
+		if($old['time'] < time()){
+			updatePlayerStat($cache, $result);
+		}
+		foreach($old as $key => $val){
+			if($key == 'all' || $key == 'time'){
+				continue;
+			}
+			
+			if($result["$key"]['hit'] < $val['hit']){
+				updatePlayerStat($cache, $result);
+				break;
+			}
+			
+			$result['all'] -= $result["$key"]['weight'];
+			
+			$hit = $result["$key"]['hit']-$val['hit'];
+			$mis = $result["$key"]['mis']-$val['mis'];
+			$total = $hit+$mis;
+			
+			if($hit > 0 && $mis > 0){
+				$result["$key"]['hit'] = $hit;
+				$result["$key"]['mis'] = $mis;
+				$result["$key"]['total'] = $total;
+				
+				$result["$key"]['weight'] = round($hit*100/$total*$ads["$key"]['price']);
+				$result['all'] += $result["$key"]['weight'];
+			}
+		}
+	}
+	unset($result['time']);
+	
 	foreach($result as $key => $val){
 		if($key == 'all'){
 			continue;
 		}
+		$result["$key"]['rate'] = round($val['weight']/$ads["$key"]['price']);
 		$result["$key"]['percent'] = round($val['weight']*100/$result['all']);
 		unset($result["$key"]['weight']);
 	}
+	
 	unset($result['all']);
 	$cache->set('playerStatAds', json_encode($result), 1800);
 	//var_dump($result);
 }
+
+$cookie = authPlayerJS();
+getStatAds();

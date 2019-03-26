@@ -6,7 +6,7 @@ function xPagination(a){
 		itemsOnPage: 12,
 		cssStyle: 'light-theme',
 		onPageClick: function(page){
-			getCatalog(page);
+			getCatalog(page, false);
 			$('html, body').animate({scrollTop: $(".contentmenu").offset().top }, 0);
 		}
 	});
@@ -16,7 +16,7 @@ $("#switcher").change(function(){
     getCatalog(1, true);
 });
   
-function getCatalog(page, update = false){
+function getCatalog(page, update){
 	if($("#switcher").prop("checked")){
 		var sort = 1;
 	}else{
@@ -30,13 +30,15 @@ function getCatalog(page, update = false){
 	localStorage.setItem('catalogSort', sort);
 	year = '';
 	genre = '';
+	season = '';
 	xpage = 'favorites';
 	if(location.pathname.substring(1) != 'pages/favorites.php' && location.pathname.substring(1) != 'pages/new.php'){
 		year = $.trim($('#catalogYear').val().toString().replace(/,/g, ","));
 		genre = $.trim($('#catalogGenre').val().toString().replace(/,/g, ","));
+		season = $.trim($('#catalogSeason').val().toString().replace(/,/g, ","));
 		xpage = 'catalog';
 	}
-	search = {year, genre};
+	search = {"year":year, "genre":genre, "season": season};
 	$.post("//"+document.domain+"/public/catalog.php", { 'page': page, 'search': JSON.stringify(search), 'xpage': xpage, 'sort': sort, 'finish': finish }, function(json){
 		data = JSON.parse(json);
 		if(data.err == 'ok'){
@@ -55,7 +57,7 @@ $(document).ready(function() {
 	}else{
 		$('#switcher').bootstrapToggle('off');
 	}
-	getCatalog(1);
+	getCatalog(1, false);
 	
 	// https://bootsnipp.com/snippets/VgkV
 	// $(e.target).removeClass("active");

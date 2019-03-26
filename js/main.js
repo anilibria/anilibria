@@ -458,6 +458,7 @@ $(document).on('click', '[data-release-new], [data-release-update]', function(e)
 		'ename': $('input[id=nEname]').val(),
 		'aname': $('input[id=nAname]').val(),
 		'year': $('input[id=nYear]').val(),
+		'season': $('select[id=nSeason]').val(),
 		'type': $('input[id=nType]').val(),
 		'genre': $.trim($('.chosen').val().toString().replace(/,/g, ", ")),
 		'voice': $('input[id=nVoice]').val(),
@@ -547,15 +548,34 @@ $("#smallSearchInput").bind("input", function(){
 });
 
 $(document).on('click', '[data-release-favorites]', function(e){
+	$(this).blur();
+	e.preventDefault();
 	var _this = $(this);
-	$.post("//"+document.domain+"/public/favorites.php", {'rid': $('input[id=releaseID]').val(), 'csrf_token': csrf_token}, function(json){
+	var rid = $(this).data("release-favorites");
+	if(rid.length === 0){
+		var page = 'release';
+		var rid = $('input[id=releaseID]').val();
+	}
+	$.post("//"+document.domain+"/public/favorites.php", {'rid': rid, 'csrf_token': csrf_token}, function(json){
 		console.log(json);
 		data = JSON.parse(json);
+		if(data.key == 'access'){
+			$('#authPlsModal').modal('show');
+			return;
+		}
 		if(data.err == 'ok'){
-			if(_this.hasClass("favorites")){
-				_this.removeClass("favorites");
+			if(page == 'release'){
+				if(_this.hasClass("favorites")){
+					_this.removeClass("favorites");
+				}else{
+					_this.addClass("favorites");
+				}
 			}else{
-				_this.addClass("favorites");
+				if($('img[id='+rid+']').attr("src") == '/img/other/heart-solid.svg'){
+					$('img[id='+rid+']').attr("src","/img/other/heart-regular.svg");
+				}else{
+					$('img[id='+rid+']').attr("src","/img/other/heart-solid.svg");
+				}
 			}
 		}
 	});
@@ -688,4 +708,11 @@ $(document).on("click", "[data-random-release]", function(e) {
 	$.post("//"+document.domain+"/public/random.php", { 'js': '1' }, function(data){
 		document.location.href="/release/"+data+".html";
 	});
+});
+
+
+$(document).on("click", "[data-release-tags]", function(e) {
+	$(this).blur();
+	e.preventDefault();
+	$('#tagsModal').modal('show');
 });

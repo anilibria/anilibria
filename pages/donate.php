@@ -17,14 +17,22 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
 	<div class="news-body">
 		
 
-<p style="text-align:center; font-size:13pt;">БЛАГОДАРЯ ВАМ НАША ОЗВУЧКА ВЫХОДИТ БЫСТРЕЕ</p>
+
+	<div class="xplayer" id="anilibriaPlayer" style="display: block; margin-bottom: 15px; border-top-left-radius: 4px; border-top-right-radius: 4px;"></div>
+	
+	<!--<div style="border-radius: 4px; overflow: hidden; z-index: 1; height: 530px; width: 840px;">
+		<iframe width="840" height="530" src="https://www.youtube.com/embed/xGYsezJddlw" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+	</div>
+	<div style="margin-top:10px;"></div> -->
+	<div class="clear"></div>
+	
 	
 	<div id="yandexMoney" style="float:left;"></div>
 	<table class="table table-bordered" style="width: 450px; float:right; margin-top:0px; margin-left:30px; margin-bottom: 10px;">
 			<tbody>
 				<tr>
 					<td>QIWI</td>
-					<td>+7xxxxxx</td>
+					<td>79660956323</td>
 				</tr>
 				<tr>
 					<td>Яндекс деньги</td>
@@ -44,7 +52,7 @@ require($_SERVER['DOCUMENT_ROOT'].'/private/header.php');
 		
 		<div style="width: 450px; float:right;">
 			
-			<center style="margin-top:0px;"><a href="https://www.patreon.com/anilibria">https://www.patreon.com/anilibria</a> - ежемесячный платёж!<br/> Самый лучший способ поддержать проект.</center>
+			<center style="margin-top:0px;"><a href="https://www.patreon.com/anilibria" target="_blank">https://www.patreon.com/anilibria</a> - ежемесячный платёж!<br/> Самый лучший способ поддержать проект.</center>
 		
 		</div>
 		

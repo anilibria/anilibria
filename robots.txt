@@ -10,11 +10,14 @@ Allow: /pages/donate.php$
 Allow: /pages/alphabet.php$
 Allow: /pages/login.php$
 Allow: /release/*.html$
+Allow: /season/*.html$
 
 Allow: *.js
 Allow: *.css
 Allow: *.png
 Allow: *.jpg
+
+Allow: /sitemap.xml$
 
 Disallow: /
 
