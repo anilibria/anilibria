@@ -1,4 +1,53 @@
 <script src="{playerjs}" type="text/javascript"></script>
 <script>
-	var player = new Playerjs({ id:"anilibriaPlayer", file:[{playlist}], default_quality:"1080p", preroll_deny:"{deny}"});
+	const playlist = [{playlist}];
+	const player = new Playerjs({
+		id: "anilibriaPlayer",
+		file: playlist,
+		default_quality: "1080p",
+		preroll_deny: "{deny}"
+	});
+
+	const shareVideoButton = document.querySelector("button#buttonIntentShare");
+
+	// if the site is open on the android platform add button for view series in an external player
+	if (navigator.userAgent.match(/android/i) && navigator.vendor.match(/Google Inc./i)) {
+		shareVideoButton.setAttribute("disabled", false);
+		// share video button click listener
+		shareVideoButton.onclick = (event) => {
+			try {
+				// get selected video id
+				const selectedSeriesId = player.api("playlist_id");
+				// get current video quality
+				const selectedSeriesVideoQuality = player.api("quality");
+				// get video links by id and map to { "qulity": "quality", "link": "link" }
+				const selectedSeriesVideoLinks = playlist
+					.find(it => it.id === selectedSeriesId)
+					.file
+					.split(",")
+					.map(it => ({
+						quality: it.match(/\[(\d{1,}p)\]/)[1],
+						link: it.match(/\/\/(.+)$/)[1]
+					}));
+				// get a link with the specified quality
+				const selectedVideoLink = selectedSeriesVideoLinks
+					.find(it => it.quality === selectedSeriesVideoQuality)
+					.link;
+
+				// intent meta
+				const schema = location.protocol.substring(0, location.protocol.length - 1);
+				const action = "android.intent.action.VIEW";
+				const mimeType = "video/m3u8"; // video/*, video/mp4, etc
+				// make and call intent
+				window.location = `intent://${selectedVideoLink}#Intent;
+					scheme=${schema};
+					action=${action};
+					type=${mimeType};
+					end`;
+			} catch (err) {
+				console.error(err);
+				alert('OOPS, не работает');
+			}
+		}
+	}
 </script>
