@@ -1644,7 +1644,7 @@ function xrelease(){
 			}		
 			uploadPoster($id);
 			$sqlUpdate = implode(',', $sql['update']);
-            $query = $db->prepare("UPDATE `xrelease` SET $sqlUpdate WHERE `id` = :id");
+            $query = $db->prepare("UPDATE `xrelease` SET $sqlUpdate, `last_change` = UNIX_TIMESTAMP() WHERE `id` = :id");
 			$query->bindParam(':id', $id);
 		}else{
 			$query = $db->prepare("INSERT INTO `xrelease` ($sqlCol) VALUES ($sqlVal)");
@@ -2093,7 +2093,7 @@ function updateReleaseAnnounce(){
 		_message('wrongRelease', 'error');
 	}
 	$_POST['announce'] = htmlspecialchars($_POST['announce'], ENT_QUOTES, 'UTF-8');
-	$query = $db->prepare('UPDATE `xrelease` SET `announce` = :announce WHERE `id` = :id');
+	$query = $db->prepare('UPDATE `xrelease` SET `announce` = :announce, `last_change` = UNIX_TIMESTAMP() WHERE `id` = :id');
 	$query->bindParam(':announce', $_POST['announce']);
 	$query->bindParam(':id', $_POST['id']);
 	$query->execute();

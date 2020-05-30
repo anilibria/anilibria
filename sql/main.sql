@@ -117,6 +117,7 @@ CREATE TABLE `xrelease` (
   `description` text NOT NULL,
   `season` varchar(255) DEFAULT NULL,
   `last` bigint(20) NOT NULL DEFAULT 0,
+  `last_change` bigint(20) NOT NULL DEFAULT UNIX_TIMESTAMP(),
   `day` int(1) NOT NULL DEFAULT 1,
   `rating` int(11) NOT NULL DEFAULT 0,
   `code` varchar(1024) DEFAULT NULL,
