@@ -40,3 +40,5 @@ $conf['push_all'] = 'secret';
 $conf['push_sanasol'] = 'secret';
 
 $conf['fcm_token'] = "secret";
+
+$conf['api_v2'] = 'localhost:99';

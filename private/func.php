@@ -1660,6 +1660,9 @@ function xrelease(){
 		if(empty($data['ename'])){
 			$data['ename'] = '';
 		}
+
+		APIv2_UpdateTitle($id);
+
 		die(json_encode(['err' => 'ok', 'url' => urlCode($id, $data['ename']),  'mes' => 'success']));
 	}
 }
@@ -2097,6 +2100,9 @@ function updateReleaseAnnounce(){
 	$query->bindParam(':announce', $_POST['announce']);
 	$query->bindParam(':id', $_POST['id']);
 	$query->execute();
+	
+	APIv2_UpdateTitle($id);
+	
 	_message('success');
 }
 
@@ -2588,6 +2594,9 @@ function releaseUpdateLast(){
 	$query->bindParam(':time', $var['time']);
 	$query->bindParam(':id', $_POST['id']);
 	$query->execute();
+	
+	APIv2_UpdateTitle($id);
+	
 	_message('success');
 }
 
@@ -3100,4 +3109,9 @@ function iframePlayer(){
 		return ['id' => $_GET['id'], 'result' => $result];
 	}
 	return '';
+}
+
+function APIv2_UpdateTitle($title_id) {
+	file_get_contents("{$conf['api_v2']}/webhook/updateTitle?id={$title_id}");
+	fastcgi_finish_request();
 }
