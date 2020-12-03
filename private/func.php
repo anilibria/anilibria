@@ -512,7 +512,7 @@ function registration(){
 	if(strlen($_POST['login']) > 20 || strlen($_POST['mail']) > 254){
 		_message('long', 'error');
 	}
-	if(preg_match('/[^0-9A-Za-z]/', $_POST['login'])){
+	if(preg_match('/[^0-9A-Za-z-_]/', $_POST['login'])){
 		_message('wrongLogin', 'error');
 	}
 	if(!filter_var($_POST['mail'], FILTER_VALIDATE_EMAIL)){
